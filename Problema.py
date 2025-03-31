@@ -1,8 +1,13 @@
-from aima import Problem, Node, memoize
+from aima import Problem, Node, PriorityQueue, GraphProblem, memoize, romania_map
 from collections.abc import Callable
 from collections import deque
 from colorama import Fore, Back, Style
 import time, sys
+from collections.abc import Callable
+import functools
+import random
+import math
+
 
 BLUE = "\033[34;1m"
 RED = "\033[31;1m"
@@ -29,11 +34,40 @@ def execute(name: str, algorithm: Callable, problem: Problem, *args, **kwargs) -
 
 # TODO: algoritmo A* con tutto il resto asdsadsaasd
 
-def bfss (problema: Problem, f: Callable) -> Node:
-    node: Node = Node(problema.initial)
-    if problema.goal_test(node.state):
+def bfss(problem: Problem, f: Callable) -> Node:
+    node: Node = Node(problem.initial)
+    if problem.goal_test(node.state):
         return node
     f = memoize(f, 'f')
+
+    frontiera = PriorityQueue('min', f)
+    frontiera.append(node)
+    esplorati = set()
+    print(f"{PINK}BFSSSSSSSSSSSSS:{RESET}")
+    while frontiera:
+        node = frontiera.pop()
+        if problem.goal_test(node.state):
+            print("YEEEEEE")
+            return node
+        esplorati.add(node.state)
+        for child in node.expand(problem):
+            if child.state not in esplorati and child not in frontiera:
+                frontiera.append(child)
+            elif child in frontiera:
+                inc = frontiera.get_item(child)
+                if f(child) < f(inc):
+                    del frontiera[inc]
+                    frontiera.append(child)
+                    print(f"({inc}, {inc.f}) -- replaced by ({child}, {child.f})")
+    return None
+
+def aStar(problema: Problem, h : Callable | None = None) -> Node:
+    h = memoize(h or problema.h, 'h')
+    return bfss(problema, lambda node : h(node) + node.path_cost)
+
+# TEST
+romania_problem = GraphProblem('Arad','Bucharest', romania_map)
+execute("BFS su grafo", aStar, romania_problem)
 
 
 
