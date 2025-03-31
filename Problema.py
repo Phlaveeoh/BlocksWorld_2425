@@ -14,12 +14,18 @@ RED = "\033[31;1m"
 GREEN = "\033[32;1m"
 RESET = "\033[0m"
 
-def execute(name: str, algorithm: Callable, problem: Problem, *args) -> None:
-    print(f"{BLUE}{name}{RESET}\n")
+def execute(name: str, algorithm: Callable, problem: Problem, *args, **kwargs) -> None:
+    print(f"{RED}{name}{RESET}\n")
     start = time.time()
-    sol = algorithm(problem, *args)
+    sol = algorithm(problem, *args, **kwargs)
     end = time.time()
-    print(f"\n{GREEN}PROBLEM:{RESET} {problem.initial} -> {problem.goal}")
+    if problem.goal is not None:
+        print(f"\n{GREEN}PROBLEM:{RESET} {problem.initial} -> {problem.goal}")
+    if isinstance(sol, Node):
+        print(f"{GREEN}Total nodes generated:{RESET} {sol.nodes_generated}")
+        print(f"{GREEN}Paths explored:{RESET} {sol.paths_explored}")
+        print(f"{GREEN}Nodes left in frontier:{RESET} {sol.nodes_left_in_frontier}")
+        sol = sol.result
     print(f"{GREEN}Result:{RESET} {sol.solution() if sol is not None else '---'}")
     if isinstance(sol, Node):
         print(f"{GREEN}Path Cost:{RESET} {sol.path_cost}")
@@ -37,7 +43,7 @@ def bfss(problem: Problem, f: Callable) -> Node:
     frontiera = PriorityQueue('min', f)
     frontiera.append(node)
     esplorati = set()
-    print(f"{BLUE}BFSSSSSSSSSSSSS:{RESET}")
+    print(f"{PINK}BFSSSSSSSSSSSSS:{RESET}")
     while frontiera:
         node = frontiera.pop()
         if problem.goal_test(node.state):
@@ -72,11 +78,11 @@ class Board():
         
     def get_legal_position(self, x, y):
         positions = []
-        for nx in len(self.matrix):
-            for ny in nx:
-                if(nx != x and self.matrix[nx,ny] == 0 and (ny == 5 or self.matrix[nx, ny+1] != 0)):
+        for nx in range(len(self.matrix)):
+            for ny in range(nx):
+                if(nx != x and self.matrix[nx][ny] == 0 and (ny == 5 or self.matrix[nx][ny+1] != 0)):
                     positions.append(tuple(x, y, nx, ny))
-                    print(f"{self.matrix[x,y]} da {x},{y} a {nx},{ny}")
+                    print(f"{self.matrix[x][y]} da {x},{y} a {nx},{ny}")
         return positions
     
 #[[0,0,0,1,4,5]]
@@ -95,9 +101,11 @@ class Blocconi(Problem):
 
     def actions(self, state):
         actions = []
-        for x in len(state.matrix):
-            for y in x:
-                if state.matrix[x,y] != 0:
+        for x in range(len(state.matrix)):
+            for y in range(x):
+                print(state.matrix[x][y])
+                if state.matrix[x][y] != 0:
+                    print("trovato candidato allo spostamento")
                     actions = actions + state.get_legal_position(x, y)
         return actions
 
@@ -132,4 +140,4 @@ class Blocconi(Problem):
     
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
 problema = Blocconi(tavola, Board([]))
-problema.actions
+problema.actions(problema.initial)
