@@ -2,19 +2,42 @@ from aima import Problem, Node, memoize
 from collections.abc import Callable
 from collections import deque
 from colorama import Fore, Back, Style
-from collections.abc import Callable
 import time, sys
-import functools
-import random
-import math
 
-# TODO: algoritmo A* con tutto il resto 
+BLUE = "\033[34;1m"
+RED = "\033[31;1m"
+GREEN = "\033[32;1m"
+RESET = "\033[0m"
+
+def execute(name: str, algorithm: Callable, problem: Problem, *args, **kwargs) -> None:
+    print(f"{RED}{name}{RESET}\n")
+    start = time.time()
+    sol = algorithm(problem, *args, **kwargs)
+    end = time.time()
+    if problem.goal is not None:
+        print(f"\n{GREEN}PROBLEM:{RESET} {problem.initial} -> {problem.goal}")
+    if isinstance(sol, Node):
+        print(f"{GREEN}Total nodes generated:{RESET} {sol.nodes_generated}")
+        print(f"{GREEN}Paths explored:{RESET} {sol.paths_explored}")
+        print(f"{GREEN}Nodes left in frontier:{RESET} {sol.nodes_left_in_frontier}")
+        sol = sol.result
+    print(f"{GREEN}Result:{RESET} {sol.solution() if sol is not None else '---'}")
+    if isinstance(sol, Node):
+        print(f"{GREEN}Path Cost:{RESET} {sol.path_cost}")
+        print(f"{GREEN}Path Length:{RESET} {sol.depth}")
+    print(f"{GREEN}Time:{RESET} {end - start} s")
+
+# TODO: algoritmo A* con tutto il resto asdsadsaasd
 
 def bfss (problema: Problem, f: Callable) -> Node:
     node: Node = Node(problema.initial)
     if problema.goal_test(node.state):
         return node
     f = memoize(f, 'f')
+
+
+
+
 
 
 # TODO: Classe del problema
