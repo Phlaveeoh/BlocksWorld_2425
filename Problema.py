@@ -69,17 +69,21 @@ def aStar(problema: Problem, h : Callable | None = None) -> Node:
 romania_problem = GraphProblem('Arad','Bucharest', romania_map)
 execute("BFS su grafo", aStar, romania_problem)
 
-
-
-
-
-
 # TODO: Classe del problema
 class Board():
     
     #funzioni sborranti
     def __init__(self, matrix):
         self.matrix = matrix
+        
+    def get_legal_position(self, x, y):
+        positions = []
+        for nx in len(self.matrix):
+            for ny in nx:
+                if(nx != x and self.matrix[nx,ny] == 0 and (ny == 5 or self.matrix[nx, ny+1] != 0)):
+                    positions.append(tuple(x, y, nx, ny))
+                    print(f"{self.matrix[x,y]} da {x},{y} a {nx},{ny}")
+        return positions
     
 #[[0,0,0,1,4,5]]
 #[[0,0,0,0,0,0]]
@@ -100,10 +104,7 @@ class Blocconi(Problem):
         for x in len(state.matrix):
             for y in x:
                 if state.matrix[x,y] != 0:
-                    print
-                    actions.append(tuple(x,y))
-                    print(f"{x},{y}")
-                    break
+                    actions = actions + state.get_legal_position(x, y)
         return actions
 
     def result(self, state, action):
