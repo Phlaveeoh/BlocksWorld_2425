@@ -1,4 +1,4 @@
-from aima import Problem, Node, PriorityQueue, GraphProblem, memoize, romania_map
+from aima import Problem, Node, PriorityQueue, GraphProblem, memoize, romania_map, breadth_first_graph_search
 from collections.abc import Callable
 from collections import deque
 from colorama import Fore, Back, Style
@@ -7,6 +7,7 @@ from collections.abc import Callable
 import functools
 import random
 import math
+from copy import deepcopy
 
 
 BLUE = "\033[34;1m"
@@ -59,6 +60,9 @@ def aStar(problema: Problem, h : Callable | None = None) -> Node:
     h = memoize(h or problema.h, 'h')
     return bfss(problema, lambda node : h(node) + node.path_cost)
 
+def ucs(problem: Problem) -> Node:
+  return bfss(problem, lambda node : node.path_cost)
+
 # TEST
 romania_problem = GraphProblem('Arad','Bucharest', romania_map)
 execute("BFS su grafo", aStar, romania_problem)
@@ -70,12 +74,12 @@ class Board():
     def __init__(self, matrix):
         self.matrix = matrix
         
-    def get_legal_position(self, x, y):
+    def get_legal_positions(self, x, y):
         positions = []
         for nx in range(len(self.matrix)):
-            for ny in range(nx):
+            for ny in range(6):
                 if(nx != x and self.matrix[nx][ny] == 0 and (ny == 5 or self.matrix[nx][ny+1] != 0)):
-                    positions.append(tuple(x, y, nx, ny))
+                    positions.append((x, y, nx, ny))
                     print(f"{self.matrix[x][y]} da {x},{y} a {nx},{ny}")
         return positions
     
@@ -96,28 +100,32 @@ class Blocconi(Problem):
     def actions(self, state):
         actions = []
         for x in range(len(state.matrix)):
-            for y in range(x):
-                print(state.matrix[x][y])
+            for y in range(6):
                 if state.matrix[x][y] != 0:
-                    print("trovato candidato allo spostamento")
-                    actions = actions + state.get_legal_position(x, y)
+                    actions = actions + state.get_legal_positions(x, y)
+                    break
         return actions
 
     def result(self, state, action):
-        """Return the state that results from executing the given
-        action in the given state. The action must be one of
-        self.actions(state)."""
-        raise NotImplementedError
+        x, y, nx, ny = action
+        next_board = Board(deepcopy(state.matrix))
+        temp = next_board.matrix[x][y]
+        next_board.matrix[x][y] = 0
+        next_board.matrix[nx][ny] = temp
+        print(next_board.matrix)
+        return next_board
 
     def goal_test(self, state):
         """Return True if the state is a goal. The default method compares the
         state to self.goal or checks for state in self.goal if it is a
         list, as specified in the constructor. Override this method if
         checking against a single self.goal is not enough."""
-        if isinstance(self.goal, list):
-            return is_in(state, self.goal)
-        else:
-            return state == self.goal
+        print("testiamo se abbiamo finito")
+        for x in range(len(state.matrix)):
+            for y in range(6):
+                if state.matrix[x][y] != self.goal.matrix[x][y]:
+                    return False
+        return True
 
     def path_cost(self, c, state1, action, state2):
         """Return the cost of a solution path that arrives at state2 from
@@ -133,5 +141,9 @@ class Blocconi(Problem):
         raise NotImplementedError
     
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
-problema = Blocconi(tavola, Board([]))
-problema.actions(problema.initial)
+problema = Blocconi(tavola, Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]))
+
+problema2 = Blocconi(Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]), Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]))
+    
+    
+execute("BFS", breadth_first_graph_search, problema)
