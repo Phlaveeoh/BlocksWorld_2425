@@ -132,6 +132,8 @@ class Blocconi(Problem):
         and related algorithms try to maximize this value."""
         raise NotImplementedError
     
+    def euristica(problem, node):
+    
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
 problema = Blocconi(tavola, Board([]))
 problema.actions(problema.initial)
