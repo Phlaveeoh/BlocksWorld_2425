@@ -31,11 +31,9 @@ def bfss(problem: Problem, f: Callable) -> Node:
     frontiera = PriorityQueue('min', f)
     frontiera.append(node)
     esplorati = set()
-    print(f"{BLUE}BFSSSSSSSSSSSSS:{RESET}")
     while frontiera:
         node = frontiera.pop()
         if problem.goal_test(node.state):
-            print("YEEEEEE")
             return node
         esplorati.add(node.state)
         for child in node.expand(problem):
@@ -46,7 +44,6 @@ def bfss(problem: Problem, f: Callable) -> Node:
                 if f(child) < f(inc):
                     del frontiera[inc]
                     frontiera.append(child)
-                    print(f"({inc}, {inc.f}) -- replaced by ({child}, {child.f})")
     return None
 
 #Definizione A* g(n) + h(n)
@@ -57,7 +54,6 @@ def aStar(problema: Problem, h : Callable | None = None) -> Node:
 #Definizione UCS
 def ucs(problem: Problem) -> Node:
   return bfss(problem, lambda node : node.path_cost)
-
 
 class Board():
     '''La classe Board rappresenta il dominio del problema, ovvero una griglia 6*6
@@ -70,6 +66,9 @@ class Board():
         if not isinstance(other, Board):
             return False
         return self.matrix == other.matrix
+    
+    def __lt__(self, other):
+        return hash(self) < hash(other)
 
     def __hash__(self):
         return hash(tuple(tuple(row) for row in self.matrix))
@@ -154,9 +153,32 @@ class BlocksWorldProblem(Problem):
         and related algorithms try to maximize this value."""
         raise NotImplementedError
     
+    def h(self, node):
+        state = node.state  # Prendiamo lo stato dal nodo
+        distance = 0
+        goal_positions = {self.goal.matrix[x][y]: (x, y) for x in range(len(self.goal.matrix)) for y in range(6) if self.goal.matrix[x][y] != 0}
+
+        for x in range(len(state.matrix)):
+            for y in range(6):
+                block = state.matrix[x][y]
+                if block != 0 and block in goal_positions:
+                    gx, gy = goal_positions[block]
+                    base_distance = abs(x - gx) + abs(y - gy)
+                    
+                    # Penalizza blocchi bloccati sotto altri
+                    penalty = sum(1 for yy in range(y+1, 6) if state.matrix[x][yy] != 0)
+                    
+                    distance += base_distance + penalty  # Penalizza blocchi se devono essere liberati prima
+        return distance
+    
 #Piccoli test    
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
-problema = BlocksWorldProblem(tavola, Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,2,3]]))
-problema2 = BlocksWorldProblem(Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]), Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]))
-    
-execute("BFS", breadth_first_graph_search, problema)
+problema1 = BlocksWorldProblem(tavola, Board([[0,0,0,5,1,4],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,2,6,3]]))
+problema2 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
+problema3 = BlocksWorldProblem(Board([[0,0,0,0,0,1],[0,0,0,0,0,2],[0,0,0,0,0,3],[0,0,0,0,0,4],[0,0,0,0,0,5],[0,0,0,0,0,6]]), Board([[0,0,0,0,0,6],[0,0,0,0,0,5],[0,0,0,0,0,4],[0,0,0,0,0,3],[0,0,0,0,0,2],[0,0,0,0,0,1]]))
+problema4 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,5,6],[0,0,0,0,3,4],[0,0,0,0,1,2],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6],[0,0,0,0,0,0]]))
+problema5 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,3,4],[0,0,0,5,1,2],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6],[0,0,0,0,0,0]]))
+problema6 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,2],[0,0,0,0,4,6],[0,0,0,0,1,3],[0,0,0,0,0,5],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
+problema7 = BlocksWorldProblem(Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
+
+execute("A*", aStar, problema2)
