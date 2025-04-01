@@ -153,14 +153,8 @@ class BlocksWorldProblem(Problem):
         """For optimization problems, each state has a value. Hill Climbing
         and related algorithms try to maximize this value."""
         raise NotImplementedError
-<<<<<<< HEAD
     
-    def euristica(problem, node):
-    
-=======
-
-#Piccoli test 
->>>>>>> refs/remotes/origin/main
+#Piccoli test    
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
 problema = BlocksWorldProblem(tavola, Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,2,3]]))
 problema2 = BlocksWorldProblem(Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]), Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,6,3,2],[0,0,0,0,0,0]]))
