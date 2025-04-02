@@ -179,25 +179,26 @@ class BlocksWorldProblem(Problem):
         print(valori," VALORI\n")
         #print(coordinateX[1],"\n")
         #print(coordinateY[1],"\n")
-
-        for i in azioni:
-            x, y, nx, ny = i
-            block = state.matrix[x][y]
-            print(block," Blocco\n")
-            #controllare se sta in un goal state E se sotto di lui non ha blocchi che non sono in goal
-            for sus in valori:
-                if valori[sus-1] == block:
-                    if(nx == coordinateX[sus-1] and ny == coordinateY[sus-1]): 
-                        #siamo contenti
-                        print("siamo nel goal")
-                        euristica = euristica -100
-                    else: 
-                        euristica = euristica +100
-                    #print(sus," SUS??\n")
-                    #print(coordinateX[sus-1])
-                    #print(coordinateY[sus-1])
+        for x in range(len(state.matrix)):
+            #print("\n")
+            for y in range(6):
+                block = state.matrix[x][y]
+                #controllare se sta in un goal state E se sotto di lui non ha blocchi che non sono in goal
+                if block != 0:
+                    for sus in valori:
+                        if valori[sus-1] == block:
+                            if(x == coordinateX[sus-1] and y == coordinateY[sus-1]): 
+                                #siamo contenti SOLO SE SOTTO NON CI SONO SBURATORI
+                                print("siamo nel goal")
+                                euristica -= y
+                            else: 
+                                euristica += y
+                    
+                        penalty = 0
+                    #controllare se sotto c'è uno non nel goal
 
         #time.sleep(1)
+        print("\nEURSITICA ", euristica)
         return euristica
     
 #Piccoli test    
@@ -209,5 +210,7 @@ problema4 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,5,6],[0,0,0,0,3,4],
 problema5 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,3,4],[0,0,0,5,1,2],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6],[0,0,0,0,0,0]]))
 problema6 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,2],[0,0,0,0,4,6],[0,0,0,0,1,3],[0,0,0,0,0,5],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
 problema7 = BlocksWorldProblem(Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
+
+problema8 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 
 execute("A*", aStar, problema2)
