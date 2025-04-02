@@ -1,10 +1,8 @@
-from aima import Problem, Node, PriorityQueue, memoize, breadth_first_graph_search
+from aima import Problem, Node, PriorityQueue, memoize
 from collections.abc import Callable
 import time
 from collections.abc import Callable
 from copy import deepcopy
-import time
-
 
 BLUE = "\033[34;1m"
 RED = "\033[31;1m"
@@ -24,7 +22,7 @@ def execute(name: str, algorithm: Callable, problem: Problem, *args) -> None:
         print(f"{GREEN}Path Length:{RESET} {sol.depth}")
     print(f"{GREEN}Time:{RESET} {end - start} s")
 
-#Algoritmo di ricerca
+#Algoritmo di ricerca best_first_search
 def bfss(problem: Problem, f: Callable) -> Node:
     node: Node = Node(problem.initial)
     if problem.goal_test(node.state):
@@ -36,6 +34,7 @@ def bfss(problem: Problem, f: Callable) -> Node:
     while frontiera:
         node = frontiera.pop()
         if problem.goal_test(node.state):
+            print(f"Numero di nodi espansi:{len(esplorati)}")
             return node
         esplorati.add(node.state)
         for child in node.expand(problem):
@@ -48,9 +47,14 @@ def bfss(problem: Problem, f: Callable) -> Node:
                     frontiera.append(child)
     return None
 
-#Definizione A* g(n) + h(n)
+#Definizione A* g(n) + h(n) che utilizza la prima euristica
 def aStar(problema: Problem, h : Callable | None = None) -> Node:
     h = memoize(h or problema.h, 'h')
+    return bfss(problema, lambda node : h(node) + node.path_cost)
+
+#Definizione A* g(n) + h(n) che utilizza la seconda euristica
+def aStar2(problema: Problem, h : Callable | None = None) -> Node:
+    h = memoize(h or problema.h2, 'h')
     return bfss(problema, lambda node : h(node) + node.path_cost)
 
 #Definizione UCS
@@ -84,25 +88,18 @@ class Board():
         return self.__str__()
     
     #Metodo che restituisce gli spostamenti possibili che può fare un dato blocco
-        #Metodo che restituisce gli spostamenti possibili che può fare un dato blocco
+    #Tolto empty_column_found visto che mozzava la quantità di mosse legali che il metodo riconosceva
     def get_legal_positions(self, x, y):
         positions = []
-        empty_column_found = False
         #Scorro tutta la board
         for nx in range(len(self.matrix)):
             for ny in range(6):
                 #Appena trovo una posizione legale dove il blocco può spostarsi la aggiungo alle posizioni
                 # FIXME: Condizione posizione legale
                 if(nx != x and self.matrix[nx][ny] == 0 and (ny == 5 or self.matrix[nx][ny+1] != 0)):
-                    if (ny == 5):
-                        if (empty_column_found):
-                            continue
-                        else:
-                            empty_column_found = True
                     #l'azione effettuabile è rappresentata da una tupla(x, y, nx, ny)
                     # dove la prima coppia di coordinate è la posizione attuale del blocco, la seconda coppia è la nuova posizione dove verrà spostato
                     positions.append((x, y, nx, ny))
-                    #print(f"{self.matrix[x][y]} da {x},{y} a {nx},{ny}")
         return positions
 
 class BlocksWorldProblem(Problem):
@@ -113,7 +110,8 @@ class BlocksWorldProblem(Problem):
     def __init__(self, initial: Board, goal: Board):
         self.initial = initial
         self.goal = goal
-        self.goal_position = {self.goal.matrix[x][y]: (x, y) for x in range(len(self.goal.matrix)) for y in range(6) if self.goal.matrix[x][y] != 0}
+        #Coordinate finali di tutti i blocchi, utilizzate nelle euristiche
+        self.goal_positions = {self.goal.matrix[x][y]: (x, y) for x in range(len(self.goal.matrix)) for y in range(6) if self.goal.matrix[x][y] != 0}
 
     #Metodo che restituisce tutte le azioni possibili da un dato stato
     def actions(self, state):
@@ -130,20 +128,15 @@ class BlocksWorldProblem(Problem):
 
     #metodo che restituisce un nuovo stato che è il risultato di una determinata azione
     def result(self, state, action):
-        x, y, nx, ny = action
-        next_board = Board(deepcopy(state.matrix))
+        x, y, nx, ny = action #Raccolgo l'azione da effettuare
+        next_board = Board(deepcopy(state.matrix)) #Creo una copia dello stato della Board
         temp = next_board.matrix[x][y]
-        next_board.matrix[x][y] = 0
+        next_board.matrix[x][y] = 0 #Scambio gli elementi alle due posizioni
         next_board.matrix[nx][ny] = temp
-        #print(next_board.matrix)
         return next_board
 
     #Metodo che controlla se lo stato che riceve come parametro è lo stato goal
     def goal_test(self, state):
-        """Return True if the state is a goal. The default method compares the
-        state to self.goal or checks for state in self.goal if it is a
-        list, as specified in the constructor. Override this method if
-        checking against a single self.goal is not enough."""
         for x in range(len(state.matrix)):
             for y in range(6):
                 if state.matrix[x][y] != self.goal.matrix[x][y]:
@@ -151,36 +144,20 @@ class BlocksWorldProblem(Problem):
         return True
 
     def path_cost(self, c, state1, action, state2):
-        """Return the cost of a solution path that arrives at state2 from
-        state1 via action, assuming cost c to get up to state1. If the problem
-        is such that the path doesn't matter, this function will only look at
-        state2. If the path does matter, it will consider c and maybe state1
-        and action. The default method costs 1 for every step in the path."""
+        #Le azioni non hanno costi particolari
         return c + 1
-
-    def value(self, state):
-        """For optimization problems, each state has a value. Hill Climbing
-        and related algorithms try to maximize this value."""
-        raise NotImplementedError
     
+    #Prima euristica, soluzioni subottimali ma veloce
     def h(self, node):
         state = node.state  # Prendiamo lo stato dal nodo
-        print(state,"\n")
-        azioni = self.actions(state)
-        print(azioni)
         euristica = 0
-        valori = list(self.goal_position.keys())
+        valori = list(self.goal_positions.keys())
         coordinateX = []
         coordinateY = []
-        for valore, (x, y) in self.goal_position.items():
+        for valore, (x, y) in self.goal_positions.items():
             coordinateX.append((x))
             coordinateY.append((y))
-        print(self.goal_position,"\n")
-        print(valori," VALORI\n")
-        #print(coordinateX[1],"\n")
-        #print(coordinateY[1],"\n")
         for x in range(len(state.matrix)):
-            #print("\n")
             for y in range(6):
                 block = state.matrix[x][y]
                 #controllare se sta in un goal state E se sotto di lui non ha blocchi che non sono in goal
@@ -189,17 +166,26 @@ class BlocksWorldProblem(Problem):
                         if valori[sus-1] == block:
                             if(x == coordinateX[sus-1] and y == coordinateY[sus-1]): 
                                 #siamo contenti SOLO SE SOTTO NON CI SONO SBURATORI
-                                print("siamo nel goal")
                                 euristica -= y
                             else: 
                                 euristica += y
-                    
-                        penalty = 0
                     #controllare se sotto c'è uno non nel goal
-
-        #time.sleep(1)
-        print("\nEURSITICA ", euristica)
         return euristica
+    
+    #Seconda euristica, soluzioni ottimali ma lenta
+    def h2(self, node):
+        state = node.state  # Prendiamo lo stato dal nodo
+        distance = 0
+        for x in range(len(state.matrix)):
+            for y in range(6):
+                block = state.matrix[x][y]
+                if block != 0 and block in self.goal_positions:
+                    gx, gy = self.goal_positions[block]
+                    base_distance = abs(x - gx) + abs(y - gy)
+                    # Penalizza blocchi bloccati sotto altri
+                    penalty = sum(1 for yy in range(y+1, 6) if state.matrix[x][yy] != 0)
+                    distance += base_distance + penalty  # Penalizza blocchi se devono essere liberati prima
+        return distance
     
 #Piccoli test    
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
@@ -210,7 +196,10 @@ problema4 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,5,6],[0,0,0,0,3,4],
 problema5 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,3,4],[0,0,0,5,1,2],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6],[0,0,0,0,0,0]]))
 problema6 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,2],[0,0,0,0,4,6],[0,0,0,0,1,3],[0,0,0,0,0,5],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
 problema7 = BlocksWorldProblem(Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
-
 problema8 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
+problema9 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 
-execute("A*", aStar, problema2)
+#Dopo vari test ho notato che l'euristica 1 (h), trova soluzioni subottimali ma espande meno nodi (è più veloce)
+execute("A*", aStar, problema4)
+#L'euristica 2 (h2), trova le soluzioni ottimali ma espande molti più nodi (è più lenta)
+execute("A*", aStar2, problema4)
