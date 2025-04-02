@@ -3,6 +3,8 @@ from collections.abc import Callable
 import time
 from collections.abc import Callable
 from copy import deepcopy
+import time
+
 
 BLUE = "\033[34;1m"
 RED = "\033[31;1m"
@@ -82,14 +84,21 @@ class Board():
         return self.__str__()
     
     #Metodo che restituisce gli spostamenti possibili che può fare un dato blocco
+        #Metodo che restituisce gli spostamenti possibili che può fare un dato blocco
     def get_legal_positions(self, x, y):
         positions = []
+        empty_column_found = False
         #Scorro tutta la board
         for nx in range(len(self.matrix)):
             for ny in range(6):
                 #Appena trovo una posizione legale dove il blocco può spostarsi la aggiungo alle posizioni
                 # FIXME: Condizione posizione legale
                 if(nx != x and self.matrix[nx][ny] == 0 and (ny == 5 or self.matrix[nx][ny+1] != 0)):
+                    if (ny == 5):
+                        if (empty_column_found):
+                            continue
+                        else:
+                            empty_column_found = True
                     #l'azione effettuabile è rappresentata da una tupla(x, y, nx, ny)
                     # dove la prima coppia di coordinate è la posizione attuale del blocco, la seconda coppia è la nuova posizione dove verrà spostato
                     positions.append((x, y, nx, ny))
@@ -104,6 +113,7 @@ class BlocksWorldProblem(Problem):
     def __init__(self, initial: Board, goal: Board):
         self.initial = initial
         self.goal = goal
+        self.goal_position = {self.goal.matrix[x][y]: (x, y) for x in range(len(self.goal.matrix)) for y in range(6) if self.goal.matrix[x][y] != 0}
 
     #Metodo che restituisce tutte le azioni possibili da un dato stato
     def actions(self, state):
@@ -155,21 +165,40 @@ class BlocksWorldProblem(Problem):
     
     def h(self, node):
         state = node.state  # Prendiamo lo stato dal nodo
-        distance = 0
-        goal_positions = {self.goal.matrix[x][y]: (x, y) for x in range(len(self.goal.matrix)) for y in range(6) if self.goal.matrix[x][y] != 0}
+        print(state,"\n")
+        azioni = self.actions(state)
+        print(azioni)
+        euristica = 0
+        valori = list(self.goal_position.keys())
+        coordinateX = []
+        coordinateY = []
+        for valore, (x, y) in self.goal_position.items():
+            coordinateX.append((x))
+            coordinateY.append((y))
+        print(self.goal_position,"\n")
+        print(valori," VALORI\n")
+        #print(coordinateX[1],"\n")
+        #print(coordinateY[1],"\n")
 
-        for x in range(len(state.matrix)):
-            for y in range(6):
-                block = state.matrix[x][y]
-                if block != 0 and block in goal_positions:
-                    gx, gy = goal_positions[block]
-                    base_distance = abs(x - gx) + abs(y - gy)
-                    
-                    # Penalizza blocchi bloccati sotto altri
-                    penalty = sum(1 for yy in range(y+1, 6) if state.matrix[x][yy] != 0)
-                    
-                    distance += base_distance + penalty  # Penalizza blocchi se devono essere liberati prima
-        return distance
+        for i in azioni:
+            x, y, nx, ny = i
+            block = state.matrix[x][y]
+            print(block," Blocco\n")
+            #controllare se sta in un goal state E se sotto di lui non ha blocchi che non sono in goal
+            for sus in valori:
+                if valori[sus-1] == block:
+                    if(nx == coordinateX[sus-1] and ny == coordinateY[sus-1]): 
+                        #siamo contenti
+                        print("siamo nel goal")
+                        euristica = euristica -100
+                    else: 
+                        euristica = euristica +100
+                    #print(sus," SUS??\n")
+                    #print(coordinateX[sus-1])
+                    #print(coordinateY[sus-1])
+
+        #time.sleep(1)
+        return euristica
     
 #Piccoli test    
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
