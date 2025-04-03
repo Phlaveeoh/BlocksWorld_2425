@@ -89,7 +89,7 @@ class Board():
     
     #Metodo che restituisce gli spostamenti possibili che può fare un dato blocco
     #Tolto empty_column_found visto che mozzava la quantità di mosse legali che il metodo riconosceva
-    def get_legal_positions(self, x, y):
+    def get_legal_positions2(self, x, y):
         positions = []
         empty_column_found = False
         #Scorro tutta la board
@@ -109,7 +109,7 @@ class Board():
                     #print(f"{self.matrix[x][y]} da {x},{y} a {nx},{ny}")
         return positions
     
-    def get_legal_positions2(self, x, y):
+    def get_legal_positions(self, x, y):
         positions = []
         #Scorro tutta la board
         for nx in range(len(self.matrix)):
@@ -177,7 +177,6 @@ class BlocksWorldProblem(Problem):
         for valore, (x, y) in self.goal_positions.items():
             coordinateX.append((x))
             coordinateY.append((y))
-        print(state,"\n")
         for x in range(len(state.matrix)):
             for y in range(6):
                 block = state.matrix[x][y]
@@ -190,8 +189,10 @@ class BlocksWorldProblem(Problem):
                                 euristica -= y
                             else: 
                                 euristica += y
-                    #controllare se sotto c'è uno non nel goal
-        #time.sleep(1)
+                        #se un goal e bloccato da unaltro blocco non ci paice
+                        else:
+                            euristica += y
+        #time.sleep(0.5)
         return euristica
     
     #Seconda euristica, soluzioni ottimali ma lenta
@@ -224,4 +225,4 @@ problema9 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],
 #Dopo vari test ho notato che l'euristica 1 (h), trova soluzioni subottimali ma espande meno nodi (è più veloce)
 execute("A*", aStar, problema2)
 #L'euristica 2 (h2), trova le soluzioni ottimali ma espande molti più nodi (è più lenta)
-execute("A*", aStar2, problema2)
+#execute("A*", aStar2, problema2)
