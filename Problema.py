@@ -88,27 +88,6 @@ class Board():
         return self.__str__()
     
     #Metodo che restituisce gli spostamenti possibili che può fare un dato blocco
-    #Tolto empty_column_found visto che mozzava la quantità di mosse legali che il metodo riconosceva
-    def get_legal_positions2(self, x, y):
-        positions = []
-        empty_column_found = False
-        #Scorro tutta la board
-        for nx in range(len(self.matrix)):
-            for ny in range(6):
-                #Appena trovo una posizione legale dove il blocco può spostarsi la aggiungo alle posizioni
-                # FIXME: Condizione posizione legale
-                if(nx != x and self.matrix[nx][ny] == 0 and (ny == 5 or self.matrix[nx][ny+1] != 0)):
-                    if (ny == 5):
-                        if (empty_column_found):
-                            continue
-                        else:
-                            empty_column_found = True
-                    #l'azione effettuabile è rappresentata da una tupla(x, y, nx, ny)
-                    # dove la prima coppia di coordinate è la posizione attuale del blocco, la seconda coppia è la nuova posizione dove verrà spostato
-                    positions.append((x, y, nx, ny))
-                    #print(f"{self.matrix[x][y]} da {x},{y} a {nx},{ny}")
-        return positions
-    
     def get_legal_positions(self, x, y):
         positions = []
         #Scorro tutta la board
@@ -194,10 +173,6 @@ class BlocksWorldProblem(Problem):
                             else:
                                 # FIXME: il 5 e hard codato deve essere y.maxlength()
                                 euristica += 5 -1 - y
-                            
-
-        #time.sleep(0.5)
-        #print(euristica)
         return euristica
     
     #Seconda euristica, soluzioni ottimali ma lenta
@@ -227,7 +202,7 @@ problema7 = BlocksWorldProblem(Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],
 problema8 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 problema9 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 problema10 = BlocksWorldProblem(Board([[0,0,0,1,2,3],[0,0,0,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,5,4,3],[0,0,0,0,0,0],[0,0,0,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
-#Dopo vari test ho notato che l'euristica 1 (h), trova soluzioni subottimali ma espande meno nodi (è più veloce)
+
 execute("A*", aStar, problema1)
 execute("A*", aStar, problema2)
 execute("A*", aStar, problema3)
@@ -238,5 +213,3 @@ execute("A*", aStar, problema7)
 execute("A*", aStar, problema8)
 execute("A*", aStar, problema9)
 execute("A*", aStar, problema10)
-#L'euristica 2 (h2), trova le soluzioni ottimali ma espande molti più nodi (è più lenta)
-#execute("A*", aStar2, problema10)
