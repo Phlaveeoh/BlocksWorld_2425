@@ -171,6 +171,7 @@ class BlocksWorldProblem(Problem):
     def h(self, node):
         state = node.state  # Prendiamo lo stato dal nodo
         euristica = 0
+        #print(state,"\n")
         valori = list(self.goal_positions.keys())
         coordinateX = []
         coordinateY = []
@@ -187,12 +188,16 @@ class BlocksWorldProblem(Problem):
                             if(x == coordinateX[sus-1] and y == coordinateY[sus-1]): 
                                 #siamo contenti SOLO SE SOTTO NON CI SONO SBURATORI
                                 euristica -= y
-                            else: 
-                                euristica += y
-                        #se un goal e bloccato da unaltro blocco non ci paice
-                        else:
-                            euristica += y
+                            #se un goal e bloccato da unaltro blocco non ci paice
+                            elif x in coordinateX and y in coordinateY:
+                                euristica += y + 1000
+                            else:
+                                # FIXME: il 5 e hard codato deve essere y.maxlength()
+                                euristica += 5 -1 - y
+                            
+
         #time.sleep(0.5)
+        #print(euristica)
         return euristica
     
     #Seconda euristica, soluzioni ottimali ma lenta
@@ -221,8 +226,17 @@ problema6 = BlocksWorldProblem(Board([[0,0,0,0,0,0],[0,0,0,0,0,2],[0,0,0,0,4,6],
 problema7 = BlocksWorldProblem(Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,1,2],[0,0,0,0,3,4],[0,0,0,0,5,6]]))
 problema8 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 problema9 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
-
+problema10 = BlocksWorldProblem(Board([[0,0,0,1,2,3],[0,0,0,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,5,4,3],[0,0,0,0,0,0],[0,0,0,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 #Dopo vari test ho notato che l'euristica 1 (h), trova soluzioni subottimali ma espande meno nodi (è più veloce)
+execute("A*", aStar, problema1)
 execute("A*", aStar, problema2)
+execute("A*", aStar, problema3)
+execute("A*", aStar, problema4)
+execute("A*", aStar, problema5)
+execute("A*", aStar, problema6)
+execute("A*", aStar, problema7)
+execute("A*", aStar, problema8)
+execute("A*", aStar, problema9)
+execute("A*", aStar, problema10)
 #L'euristica 2 (h2), trova le soluzioni ottimali ma espande molti più nodi (è più lenta)
-#execute("A*", aStar2, problema2)
+#execute("A*", aStar2, problema10)
