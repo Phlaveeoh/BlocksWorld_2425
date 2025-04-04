@@ -192,7 +192,8 @@ class BlocksWorldProblem(Problem):
                             elif x in coordinateX and y in coordinateY:
                                 euristica += y + 1000
                             else:
-                                euristica += y
+                                # FIXME: il 5 e hard codato deve essere y.maxlength()
+                                euristica += 5 -1 - y
                             
 
         #time.sleep(0.5)
