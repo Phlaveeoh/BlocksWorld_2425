@@ -22,6 +22,7 @@ for i in range(25):
     plt.yticks([])
     plt.imshow(x_train_raw[i], cmap=plt.cm.binary)
 plt.show()
+
 # Flatten dei dati MNIST ridimensionati (diventa un vettore di 64 elementi per immagine)
 feature_vector_length = math.prod(x_train_raw.shape[1:])
 x_train = x_train_raw.reshape(x_train_raw.shape[0], feature_vector_length)
@@ -35,31 +36,29 @@ x_test_norm = scaler_mnist.fit_transform(x_test)
 # -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
-""" 
-mlp_combined = MLPClassifier(
+""" mlp_combined = MLPClassifier(
     solver='adam',
     activation='relu',
     hidden_layer_sizes=(512,128),
     max_iter=126,
     random_state=1,
     verbose=True
-)
-mlp_combined.fit(x_train_norm, y_train)
-"""
+) """
 
-mlp_combined = mlp_loaded = joblib.load('mlp_model.pkl')
+mlp_combined = joblib.load("mlp_model.pkl")
+#mlp_combined.fit(x_train_norm, y_train)
 
-# Valutazione del modello combinato
+""" # Valutazione del modello combinato
 predictions = mlp_combined.predict(x_test)
 accuracy = metrics.accuracy_score(y_test, predictions)
 print(f"Accuracy: {accuracy * 100:.2f}%")
 
 # Cross-Validation
-scores1 = cross_val_score(mlp_combined, x_test_norm, y_test, cv=2)
+scores1 = cross_val_score(mlp_combined, x_test_norm, y_test, cv=10)
 print("CV scores (MLP1):", scores1)
-print("Mean accuracy value (MLP1):", scores1.mean())
+print("Mean accuracy value (MLP1):", scores1.mean()) """
 
-# joblib.dump(mlp_combined, 'mlp_model.pkl')
+#mlp_combined.save("mlp.keras")
 
 # CNN model definition
 model = Sequential([
@@ -70,7 +69,20 @@ model = Sequential([
     MaxPooling2D((2, 2)),
     #Dropout(0.2),
     Conv2D(64, (3, 3), activation='relu'),
-    Flatten()
+    Flatten(),
+    Dense(512, activation='relu'),
+    Dense(128, activation='softmax')
 ])
-# Model architecture visualization
+
 model.summary()
+
+# Compile the model
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy', 
+    metrics=['accuracy']
+)
+
+# Model training
+#history = model.fit(train_images, train_labels, epochs=15, validation_data=(test_images, test_labels))
+history = model.fit(x_train, y_train, epochs=15, validation_split=0.1)
