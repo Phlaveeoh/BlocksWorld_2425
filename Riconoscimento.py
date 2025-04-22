@@ -5,6 +5,8 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn import metrics
 from sklearn.model_selection import cross_val_score
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Input
 
 # -------------------------
 # Carica e prepara il dataset MNIST (28x28)
@@ -43,23 +45,6 @@ mlp_combined = MLPClassifier(
 )
 mlp_combined.fit(x_train_norm, y_train)
 
-# CNN model definition
-model = Sequential([
-    Input(shape=(32, 32, 3)),
-    Conv2D(32, (3, 3), activation='relu'),
-    MaxPooling2D((2, 2)),
-    Conv2D(64, (3, 3), activation='relu'),
-    MaxPooling2D((2, 2)),
-    #Dropout(0.2),
-    Conv2D(64, (3, 3), activation='relu'),
-    Flatten(),
-    Dense(64, activation='relu'),
-    Dense(10, activation='softmax')  # 10 output class
-])
-
-# Model architecture visualization
-model.summary()
-
 # Valutazione del modello combinato
 predictions = mlp_combined.predict(x_test)
 accuracy = metrics.accuracy_score(y_test, predictions)
@@ -69,3 +54,19 @@ print(f"Accuracy: {accuracy * 100:.2f}%")
 scores1 = cross_val_score(mlp_combined, x_test_norm, y_test, cv=10)
 print("CV scores (MLP1):", scores1)
 print("Mean accuracy value (MLP1):", scores1.mean())
+
+mlp_combined.save("mlp.keras")
+
+# CNN model definition
+model = Sequential([
+    Input(shape=(32, 32, 3)),
+    Conv2D(32, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPooling2D((2, 2)),
+    #Dropout(0.2),
+    Conv2D(64, (3, 3), activation='relu'),
+    Flatten()
+])
+# Model architecture visualization
+model.summary()
