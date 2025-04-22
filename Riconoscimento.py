@@ -7,6 +7,7 @@ from sklearn import metrics
 from sklearn.model_selection import cross_val_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Input
+import joblib
 
 # -------------------------
 # Carica e prepara il dataset MNIST (28x28)
@@ -21,7 +22,6 @@ for i in range(25):
     plt.yticks([])
     plt.imshow(x_train_raw[i], cmap=plt.cm.binary)
 plt.show()
-
 # Flatten dei dati MNIST ridimensionati (diventa un vettore di 64 elementi per immagine)
 feature_vector_length = math.prod(x_train_raw.shape[1:])
 x_train = x_train_raw.reshape(x_train_raw.shape[0], feature_vector_length)
@@ -35,6 +35,7 @@ x_test_norm = scaler_mnist.fit_transform(x_test)
 # -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
+""" 
 mlp_combined = MLPClassifier(
     solver='adam',
     activation='relu',
@@ -44,6 +45,9 @@ mlp_combined = MLPClassifier(
     verbose=True
 )
 mlp_combined.fit(x_train_norm, y_train)
+"""
+
+mlp_combined = mlp_loaded = joblib.load('mlp_model.pkl')
 
 # Valutazione del modello combinato
 predictions = mlp_combined.predict(x_test)
@@ -51,11 +55,11 @@ accuracy = metrics.accuracy_score(y_test, predictions)
 print(f"Accuracy: {accuracy * 100:.2f}%")
 
 # Cross-Validation
-scores1 = cross_val_score(mlp_combined, x_test_norm, y_test, cv=10)
+scores1 = cross_val_score(mlp_combined, x_test_norm, y_test, cv=2)
 print("CV scores (MLP1):", scores1)
 print("Mean accuracy value (MLP1):", scores1.mean())
 
-mlp_combined.save("mlp.keras")
+# joblib.dump(mlp_combined, 'mlp_model.pkl')
 
 # CNN model definition
 model = Sequential([
