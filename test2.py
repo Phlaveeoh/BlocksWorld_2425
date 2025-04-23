@@ -1,3 +1,8 @@
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import (
+    Input, Conv2D, MaxPooling2D,
+    Flatten, Dense, Lambda
+)
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.keras.utils import to_categorical
@@ -29,63 +34,109 @@ y_test = to_categorical(y_test, 10)
 # -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
-"""mlp = Sequential([
-    Flatten(input_shape=(28, 28, 1)),
+mlp = Sequential([
+    Input(shape=(28, 28, 1)),
+    Flatten(),
     Dense(512, activation='relu'),
     Dense(128, activation='relu'),
     Dense(10, activation='softmax')
 ])
 
+# Addestramento
 mlp.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-mlp.fit(x_train, y_train, epochs=5, validation_data=(x_test, y_test))
+mlp.fit(x_train, y_train, epochs=5)
+mlp.save_weights("mlp.weights.h5")
+
+def AdaptiveReshape(x):
+    # usa tf.image.resize come layer Lambda
+    return tf.image.resize(x, (28,28), method='bilinear')
+
+#FIXME: reshape da 512x512 a 28x28, non ho trovato in cazzo di metodo adeguato
+cnn = Sequential([
+    Input(shape=(512, 512, 1)),
+    Conv2D(16, 3, activation='relu', padding='same', strides=2),  # 256×256×16
+    MaxPooling2D(2),                                              # 128×128×16
+    Conv2D(32, 3, activation='relu', padding='same', strides=2),  #  64×64×32
+    MaxPooling2D(2),                                              #  32×32×32
+    Lambda(AdaptiveReshape),  # Porta a 28x28x32
+    Conv2D(1, (1, 1), activation='linear'),  # (28, 28, 1)
+    Flatten(),
+    Dense(512, activation='relu'),
+    Dense(128, activation='relu'),
+    Dense(10, activation='softmax')
+])
+
+dummy_input = np.zeros((1, 512, 512, 1), dtype=np.float32)
+cnn(dummy_input)  # Questo forza l'inizializzazione dei layer
+
+mlp.load_weights("mlp.weights.h5")
+
+# Copia i pesi dei layer Dense
+cnn.layers[-3].set_weights(mlp.layers[-3].get_weights())  # Dense(512)
+cnn.layers[-2].set_weights(mlp.layers[-2].get_weights())  # Dense(128)
+cnn.layers[-1].set_weights(mlp.layers[-1].get_weights())  # Dense(10)
 
 # Salva il modello
-mlp.save("mlp_mnist.h5")"""
+cnn.save("cnn_completo.h5")
 
-mlp = load_model("mlp_mnist.h5")
+#Carica il modello se già ce l'hai
+cnn = load_model("BlocksWorld_2425\\cnn_completo.h5")
 
-# Carica e prepara l'immagine grande (es. 224x224, grayscale)
-img = Image.open("image copy.png").convert('L').resize((224, 224))
-img = np.array(img) / 255.0  # normalizza
+#-------------------------------------------------------------------------------------------------
 
-# Impostazioni per patch e stride
-patch_size = 28
-stride = 14  # sovrapposizione
+def sliding_window_predict_large(scene_img, model, window_size=512, stride=50, threshold=0.8):
+    # Converti in scala di grigi e in array
+    scene_img = scene_img.convert("L")
+    scene_array = np.array(scene_img)
+    H, W = scene_array.shape
 
-# Scorri l'immagine e estrai le patch
-patches_list = []
-coordinates = []
+    predictions = []
 
-for y in range(0, img.shape[0] - patch_size + 1, stride):
-    for x in range(0, img.shape[1] - patch_size + 1, stride):
-        patch = img[y:y+patch_size, x:x+patch_size]
-        patches_list.append(patch)
-        coordinates.append((x, y))
+    for y in range(0, H - window_size + 1, stride):
+        for x in range(0, W - window_size + 1, stride):
+            window = scene_array[y:y+window_size, x:x+window_size]
 
-# Predizione su tutte le patch
-predictions = mlp.predict(np.array(patches_list))  # Modifica con il tuo MLP
-confidences = np.max(predictions, axis=1)  # Ottieni la confidenza di ogni predizione
+            # Preprocessing
+            window_input = np.expand_dims(window, axis=(0, -1))  # (1, 224, 224, 1)
+            window_input = window_input.astype('float32') / 255.0
 
-# Estrai la classe predetta (indice della probabilità massima)
-predicted_classes = np.argmax(predictions, axis=1)
+            pred = model.predict(window_input, verbose=0)
+            confidence = np.max(pred)
+            digit = np.argmax(pred)
 
-# Soglia di confidenza (ad esempio, scarta predizioni con confidenza bassa)
-threshold = 0.9  # soglia da regolare in base alla tua esigenza
-predictions_filtered = [
-    predicted_classes[i] if confidences[i] > threshold else -1
-    for i in range(len(predicted_classes))
-]
+            if confidence > threshold:
+                predictions.append({
+                    "digit": digit,
+                    "confidence": float(confidence),
+                    "position": (x, y)
+                })
 
-# Visualizzazione delle predizioni sulla griglia
-fig, ax = plt.subplots()
-ax.imshow(img, cmap='gray')
+    return predictions
 
-# Disegna le finestre (patches) e le predizioni sopra l'immagine
-for i, (x, y) in enumerate(coordinates):
-    # Se la predizione è valida (diversa da -1), disegna il rettangolo
-    if predictions_filtered[i] != -1:
-        rect = patches.Rectangle((x, y), patch_size, patch_size, linewidth=1, edgecolor='red', facecolor='none')
+def draw_predictions(scene_img, predictions, window_size=224):
+    fig, ax = plt.subplots(figsize=(12, 10))
+    ax.imshow(scene_img.convert("L"), cmap='gray')
+
+    for pred in predictions:
+        x, y = pred["position"]
+        digit = pred["digit"]
+        conf = pred["confidence"]
+
+        rect = patches.Rectangle((x, y), window_size, window_size, linewidth=2, edgecolor='red', facecolor='none')
         ax.add_patch(rect)
-        ax.text(x, y-2, str(predictions_filtered[i]), color='red', fontsize=8)
+        ax.text(x + 5, y + 20, f'{digit} ({conf:.2f})', color='red', fontsize=12, weight='bold')
 
-plt.show()
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+    
+from PIL import Image
+
+# Carica l’immagine scattata col telefono
+scene = Image.open("BlocksWorld_2425\\test_immagini\\scena.png")
+
+# Fai predizioni
+preds = sliding_window_predict_large(scene, cnn)
+
+# Visualizza
+draw_predictions(scene, preds)
