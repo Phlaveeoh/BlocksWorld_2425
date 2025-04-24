@@ -62,14 +62,14 @@ print("Test Loss:", score[0])
 print("Test Accuracy:", score[1])
 
 # Salva il modello per poterlo successivamente caricare nella fase di inferenza
-model.save("mnist_cnn.h5")
+model.save("modellone.h5")
 # Salva il modello
-model.save("mlp_mnist.keras")"""
+model.save("modellone.keras")"""
 
-model = load_model("mlp_mnist.h5")
+model = load_model("Progettone\\BlocksWorld_2425\\modellone.keras")
 
 # Carica e prepara l'immagine grande (es. 224x224, grayscale)
-image = cv2.imread('image.png')
+image = cv2.imread('Progettone\\BlocksWorld_2425\\test_immagini\\scena.png')
 
 
 # Converte l'immagine in scala di grigi
@@ -99,6 +99,7 @@ for cnt in contours:
 
     # Estrai la ROI basata sul rettangolo di bounding
     roi = thresh_adapt[y:y+h, x:x+w]
+    #roi = cv2.bitwise_not(roi)
     roi_height, roi_width = roi.shape
 
     # Calcola un margine proporzionale (ad esempio, il 10% della dimensione minore)
@@ -129,7 +130,8 @@ for cnt in contours:
 
 # Visualizza l'immagine finale con i numeri riconosciuti e le relative posizioni
 image_resized = cv2.resize(image, (800, 800), interpolation=cv2.INTER_LINEAR)
-cv2.imshow("Threshold", thresh)
+image_resized2 = cv2.resize(thresh, (800, 800), interpolation=cv2.INTER_LINEAR)
+cv2.imshow("Threshold", image_resized2)
 cv2.imshow("Risultato", image_resized)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
