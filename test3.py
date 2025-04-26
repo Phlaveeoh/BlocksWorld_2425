@@ -66,10 +66,10 @@ model.save("modellone.h5")
 # Salva il modello
 model.save("modellone.keras")"""
 
-model = load_model("Progettone\\BlocksWorld_2425\\modellone.keras")
+model = load_model("BlocksWorld_2425\\modellone.keras")
 
 # Carica e prepara l'immagine grande (es. 224x224, grayscale)
-image = cv2.imread('Progettone\\BlocksWorld_2425\\test_immagini\\scena.png')
+image = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono1.jpeg')
 
 
 # Converte l'immagine in scala di grigi
@@ -99,7 +99,7 @@ for cnt in contours:
 
     # Estrai la ROI basata sul rettangolo di bounding
     roi = thresh_adapt[y:y+h, x:x+w]
-    #roi = cv2.bitwise_not(roi)
+    roi = cv2.bitwise_not(roi)
     roi_height, roi_width = roi.shape
 
     # Calcola un margine proporzionale (ad esempio, il 10% della dimensione minore)
