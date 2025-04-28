@@ -55,8 +55,6 @@ score = model.evaluate(x_test, y_test, verbose=0)
 print("Test Loss:", score[0])
 print("Test Accuracy:", score[1])
 
-# Salva il modello per poterlo successivamente caricare nella fase di inferenza
-model.save("modelloDenso.h5")
 # Salva il modello
 model.save("modelloDenso.keras") """
 
