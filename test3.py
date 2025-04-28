@@ -1,15 +1,9 @@
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.layers import Dense, Flatten, Dropout
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Sequential, load_model, Sequential
+from keras.models import load_model
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
-from tensorflow.keras.optimizers import Adam
-from tensorflow import keras
-from sklearn.preprocessing import MinMaxScaler
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+
 # -------------------------
 # Carica e prepara il dataset MNIST (28x28)
 # -------------------------
@@ -17,20 +11,18 @@ import numpy as np
 mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-# Pre-elaborazione dei dati:
-# 1. Normalizzazione: i pixel sono scalati tra 0 e 1
+# Normalizzazione
 x_train = x_train.astype('float32') / 255.0
 x_test = x_test.astype('float32') / 255.0
 
-# 2. Rimodellamento: l'input deve avere la forma (altezza, larghezza, canali)
-# Essendo MNIST in scala di grigi, il canale è 1
+# Rimodellamento: (batch, altezza, larghezza, canali)
 x_train = x_train.reshape(-1, 28, 28, 1)
 x_test = x_test.reshape(-1, 28, 28, 1)
 
 # -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
-"""model = Sequential([
+""" model = Sequential([
  # Primo livello convoluzionale
     Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
     # Secondo livello convoluzionale
@@ -42,9 +34,11 @@ x_test = x_test.reshape(-1, 28, 28, 1)
     
     # Appiattimento della mappa delle feature per poter collegare il fully connected
     Flatten(),
+    # Livello Dense con 256 neuroni
+    Dense(256, activation='relu'),
+    Dropout(0.5),
     # Livello Dense con 128 neuroni
     Dense(128, activation='relu'),
-    Dropout(0.5),
     # Livello di output: 10 neuroni con attivazione softmax per la classificazione
     Dense(10, activation='softmax')
 ])
@@ -62,31 +56,58 @@ print("Test Loss:", score[0])
 print("Test Accuracy:", score[1])
 
 # Salva il modello per poterlo successivamente caricare nella fase di inferenza
-model.save("modellone.h5")
+model.save("modelloDenso.h5")
 # Salva il modello
-model.save("modellone.keras")"""
+model.save("modelloDenso.keras") """
 
-model = load_model("BlocksWorld_2425\\modellone.keras")
+model = load_model("BlocksWorld_2425\\modelloDenso.keras")
 
 # Carica e prepara l'immagine grande (es. 224x224, grayscale)
-image = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono1.jpeg')
+image = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono3.jpg')
 
 
 # Converte l'immagine in scala di grigi
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+gray = cv2.bitwise_not(gray)  # Inverte i colori per avere lo sfondo nero e le cifre bianche
+cv2.imshow("Gray", gray)
+cv2.waitKey(0)
 
 # Applica un leggero blur per ridurre il rumore
-blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+blurred = cv2.medianBlur(gray, 7)
+cv2.imshow("Blurred", blurred)
+cv2.waitKey(0)
+
+# Define a kernel for dilation
+dilated = cv2.erode(blurred, (1, 1), iterations=2)
+cv2.imshow("Dilated", dilated)
+cv2.waitKey(0)
 
 # Applica la threshold per ottenere un'immagine binaria
 # Utilizziamo THRESH_BINARY_INV per avere le cifre in bianco e lo sfondo in nero
-_, thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY_INV)
 
 thresh_adapt = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                      cv2.THRESH_BINARY_INV, 11, 2)
+cv2.imshow("Adaptive Threshold", thresh_adapt)
+cv2.waitKey(0)
+
+# Crea elemento structuring: ellisse di dimensione 19x19
+kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19))
+kernelApertura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+
+opened = cv2.morphologyEx(thresh_adapt, cv2.MORPH_OPEN, kernelApertura)
+cv2.imshow("Opened", opened)
+cv2.waitKey(0)
+
+# Applica closing (dilate poi erode)
+closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernelChiusura)
+
+# Visualizza il risultato
+cv2.imshow('Closed', closed)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
 # Usa connectedComponentsWithStats per segmentare l'immagine in componenti connesse
-contours, hierarchy = cv2.findContours(thresh_adapt, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+contours, hierarchy = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 # Cicla su ogni contorno trovato
 for cnt in contours:
@@ -98,8 +119,8 @@ for cnt in contours:
         continue
 
     # Estrai la ROI basata sul rettangolo di bounding
-    roi = thresh_adapt[y:y+h, x:x+w]
-    roi = cv2.bitwise_not(roi)
+    roi = closed[y:y+h, x:x+w]
+    #roi = cv2.bitwise_not(roi)
     roi_height, roi_width = roi.shape
 
     # Calcola un margine proporzionale (ad esempio, il 10% della dimensione minore)
@@ -130,7 +151,7 @@ for cnt in contours:
 
 # Visualizza l'immagine finale con i numeri riconosciuti e le relative posizioni
 image_resized = cv2.resize(image, (800, 800), interpolation=cv2.INTER_LINEAR)
-image_resized2 = cv2.resize(thresh, (800, 800), interpolation=cv2.INTER_LINEAR)
+image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
 cv2.imshow("Threshold", image_resized2)
 cv2.imshow("Risultato", image_resized)
 cv2.waitKey(0)
