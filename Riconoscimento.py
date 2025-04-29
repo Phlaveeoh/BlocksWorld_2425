@@ -4,21 +4,6 @@ import cv2
 import numpy as np
 
 # -------------------------
-# Carica e prepara il dataset MNIST (28x28)
-# -------------------------
-
-mnist = tf.keras.datasets.mnist
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-# Normalizzazione
-x_train = x_train.astype('float32') / 255.0
-x_test = x_test.astype('float32') / 255.0
-
-# Rimodellamento: (batch, altezza, larghezza, canali)
-x_train = x_train.reshape(-1, 28, 28, 1)
-x_test = x_test.reshape(-1, 28, 28, 1)
-
-# -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
 model = load_model("Progettone\\BlocksWorld_2425\\modelloDenso.keras")
@@ -68,6 +53,9 @@ cv2.destroyAllWindows()
 # Usa connectedComponentsWithStats per segmentare l'immagine in componenti connesse
 contours, hierarchy = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
+numero = []
+xMio = []
+yMio = []
 # Cicla su ogni contorno trovato
 for cnt in contours:
     # Calcola il rettangolo di bounding per il contorno
@@ -102,6 +90,10 @@ for cnt in contours:
     predicted_digit = np.argmax(prediction)
     print("Cifra Predetta:",predicted_digit)
 
+    numero.append(predicted_digit)
+    xMio.append(x)
+    yMio.append(y)
+    print(numero)
     # Disegna il rettangolo e la predizione sull'immagine originale
     cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
     cv2.putText(immagine, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
@@ -114,3 +106,8 @@ cv2.imshow("Risultato", image_resized)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
+# controllare se ci sono solamente 6 numeri
+# prendizioni controlliamo se ci sono doppioni
+    # se si prendiamo un doppione a caso e lo cambiamo con un numero mancante 
+
+# chiami funzione momesca (numeri ,x, y)
