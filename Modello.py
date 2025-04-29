@@ -57,14 +57,14 @@ print("Test Accuracy:", score[1])
 # Salva il modello
 model.save("modelloDenso.keras") """
 
-model = load_model("BlocksWorld_2425\\modelloDenso.keras")
+model = load_model("Progettone\\BlocksWorld_2425\\modelloDenso.keras")
 
 # -------------------------
 # Caricamento e pre-processing dell'immagine grande
 # -------------------------
 
 # Carica l'immagine
-immagine = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono4.jpg')
+immagine = cv2.imread('Progettone\\BlocksWorld_2425\\test_immagini\\scenaTelefono3.jpg')
 
 # Converte l'immagine in scala di grigi
 gray = cv2.cvtColor(immagine, cv2.COLOR_BGR2GRAY)
