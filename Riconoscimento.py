@@ -3,6 +3,30 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
+# controllare se ci sono solamente 6 numeri
+
+def sborra(numeri, x,y):
+    if len(numeri) > 6:
+        exit()
+# prendizioni controlliamo se ci sono doppioni
+    doppioni = []
+    for n in range(len(numeri)):
+        if numeri[n] not in doppioni:
+            doppioni.append(numeri[n])
+            print("N:",numeri[n])
+        else:
+            for d in range(1,7):
+                if d not in numeri:
+                    print("AA",numeri[n])
+                    print("AA",d)
+                    numeri[n] = d
+    
+    print(numeri)
+    # se si prendiamo un doppione a caso e lo cambiamo con un numero mancante 
+
+sborra([1,2,6,4,6,5],[1,2,3,4,5,5],[1,2,3,4,5,5])
+# chiami funzione momesca (numeri ,x, y)
+
 # -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
@@ -105,9 +129,5 @@ cv2.imshow("Threshold", image_resized2)
 cv2.imshow("Risultato", image_resized)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+sborra(numero, xMio, yMio)
 
-# controllare se ci sono solamente 6 numeri
-# prendizioni controlliamo se ci sono doppioni
-    # se si prendiamo un doppione a caso e lo cambiamo con un numero mancante 
-
-# chiami funzione momesca (numeri ,x, y)
