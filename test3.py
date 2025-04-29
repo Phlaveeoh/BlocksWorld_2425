@@ -2,7 +2,6 @@ from keras.models import load_model
 import tensorflow as tf
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
 # -------------------------
 # Carica e prepara il dataset MNIST (28x28)
@@ -60,12 +59,15 @@ model.save("modelloDenso.keras") """
 
 model = load_model("BlocksWorld_2425\\modelloDenso.keras")
 
-# Carica e prepara l'immagine grande (es. 224x224, grayscale)
-image = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono3.jpg')
+# -------------------------
+# Caricamento e pre-processing dell'immagine grande
+# -------------------------
 
+# Carica l'immagine
+immagine = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono4.jpg')
 
 # Converte l'immagine in scala di grigi
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+gray = cv2.cvtColor(immagine, cv2.COLOR_BGR2GRAY)
 gray = cv2.bitwise_not(gray)  # Inverte i colori per avere lo sfondo nero e le cifre bianche
 cv2.imshow("Gray", gray)
 cv2.waitKey(0)
@@ -75,28 +77,24 @@ blurred = cv2.medianBlur(gray, 7)
 cv2.imshow("Blurred", blurred)
 cv2.waitKey(0)
 
-# Define a kernel for dilation
-dilated = cv2.erode(blurred, (1, 1), iterations=2)
+# Dilato l'immagine per inspessire le cifre
+dilated = cv2.erode(blurred, (3, 3), iterations=2)
 cv2.imshow("Dilated", dilated)
 cv2.waitKey(0)
 
-# Applica la threshold per ottenere un'immagine binaria
-# Utilizziamo THRESH_BINARY_INV per avere le cifre in bianco e lo sfondo in nero
-
-thresh_adapt = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                     cv2.THRESH_BINARY_INV, 11, 2)
-cv2.imshow("Adaptive Threshold", thresh_adapt)
+# Applica una threshold adattiva per ottenere un'immagine binaria
+thresholded = cv2.adaptiveThreshold(dilated, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+cv2.imshow("Adaptive Threshold", thresholded)
 cv2.waitKey(0)
 
-# Crea elemento structuring: ellisse di dimensione 19x19
-kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19))
+# Applica apertura per rimuovere piccoli rumori (erode poi dilate)
 kernelApertura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-
-opened = cv2.morphologyEx(thresh_adapt, cv2.MORPH_OPEN, kernelApertura)
+opened = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernelApertura)
 cv2.imshow("Opened", opened)
 cv2.waitKey(0)
 
-# Applica closing (dilate poi erode)
+# Applica closing per riempire i contorni vuoti (dilate poi erode)
+kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19))
 closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernelChiusura)
 
 # Visualizza il risultato
@@ -135,20 +133,18 @@ for cnt in contours:
     roi_normalized = roi_resized.astype("float32") / 255.0
     roi_normalized = np.expand_dims(roi_normalized, axis=-3)
     roi_normalized = np.expand_dims(roi_normalized, axis=3)
-    cv2.imshow("Final ROI", roi_resized)  # o la ROI dopo tutti i passaggi
-    cv2.waitKey(0)
 
     # Esegui la previsione
     prediction = model.predict(roi_normalized)
     predicted_digit = np.argmax(prediction)
-    print("AAAA",predicted_digit)
+    print("Cifra Predetta:",predicted_digit)
 
     # Disegna il rettangolo e la predizione sull'immagine originale
-    cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-    cv2.putText(image, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+    cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    cv2.putText(immagine, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
 # Visualizza l'immagine finale con i numeri riconosciuti e le relative posizioni
-image_resized = cv2.resize(image, (800, 800), interpolation=cv2.INTER_LINEAR)
+image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
 image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
 cv2.imshow("Threshold", image_resized2)
 cv2.imshow("Risultato", image_resized)
