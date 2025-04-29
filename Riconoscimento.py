@@ -2,17 +2,20 @@ from keras.models import load_model
 import tensorflow as tf
 import cv2
 import numpy as np
+import MatrixMapper
 
 # -------------------------
 # Creazione e addestramento del modello MLP con i dati combinati
 # -------------------------
-model = load_model("BlocksWorld_2425\\modelloDenso.keras")
+# Vecchio: model = load_model("BlocksWorld_2425\\modelloDenso.keras")
+model = load_model(".\\modelloDenso.keras")
 
 # -------------------------
 # Preprocessing dell'immagine
 # -------------------------
 # Carico l'immagine
-immagine = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono5.jpg')
+# Vecchio: immagine = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono5.jpg')
+immagine = cv2.imread('.\\test_immagini\\scenaTelefono4.jpg')
 
 # Converto l'immagine in scala di grigi
 gray = cv2.cvtColor(immagine, cv2.COLOR_BGR2GRAY)
@@ -111,6 +114,7 @@ for cnt in depth2_contours:
     
     # Salvo il numero che ho trovato e le sue coordinate
     numero.append(predicted_digit)
+    print(f"Numero trovato {predicted_digit}")
     xMio.append(x)
     yMio.append(y)
     print(numero)
@@ -150,3 +154,4 @@ def sborra(numeri, x,y):
 
 sborra(numero,xMio,yMio)
 # chiami funzione momesca (numeri ,x, y)
+matrice_problema = MatrixMapper.digitalizza(list(zip(numero, xMio, yMio)))
