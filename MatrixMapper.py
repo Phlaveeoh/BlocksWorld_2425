@@ -45,7 +45,4 @@ def digitalizza(nums):
             if j < 6:
                 row_index = 5 - j
                 mat[col_index, row_index] = digit
-
-    print("Matrice 6x6:")
-    print(mat)
-    return mat
+    return mat.tolist()
