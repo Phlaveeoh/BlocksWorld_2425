@@ -225,7 +225,7 @@ class BlocksWorldProblem(Problem):
                     distance += base_distance + penalty  # Penalizza blocchi se devono essere liberati prima
         return distance
 
-# -------------------------
+""" # -------------------------
 # Test di alcuni problemi
 # -------------------------
 
@@ -250,4 +250,4 @@ execute("Problema 6", aStar, problema6)
 execute("Problema 7", aStar, problema7)
 execute("Problema 8", aStar, problema8)
 execute("Problema 9", aStar, problema9)
-execute("Problema 10", aStar, problema10)
+execute("Problema 10", aStar, problema10) """

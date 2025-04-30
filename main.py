@@ -5,16 +5,20 @@ from keras.models import load_model
 ## funzione riconoscimento.py che di darà la matrice 6x6
 ## salviamo le matrici
 ## le diamo in pasto a problema.py
-## crediamo le gif 
-pathImgInput = ".\\test_immagini\\scenaTelefono4.jpg"
-pathImgOutput = ".\\test_immagini\\scenaTelefono4.jpg"
-pathModello = "\\modelloDenso.keras"
+## creiamo le gif 
+pathImgInput = ".\\test_immagini\\scenaTelefono3.jpg"
+pathImgOutput = ".\\test_immagini\\scenaTelefono5.jpg"
+pathModello = ".\\modelloDenso.keras"
 
 modello = load_model(pathModello)
 
-matriceInput = ric.riconosci_Immagine(pathImgInput, modello)
-matriceInput = ric.riconosci_Immagine(pathImgOutput, modello)
+matriceInput = ric.riconosci_immagine(pathImgInput, modello)
+matriceOutput = ric.riconosci_immagine(pathImgOutput, modello)
 
-problemone = problema.BlocksWorldProblem(problema.Board(matriceInput), problema.Board(matriceInput))
-problema.execute(problemone)
+print("Matrice di input:")
+print(matriceInput)
+print("Matrice di output:")
+print(matriceOutput)
 
+problemone = problema.BlocksWorldProblem(problema.Board(matriceInput), problema.Board(matriceOutput))
+problema.execute("Da scena 3 a 5", problema.aStar, problemone)

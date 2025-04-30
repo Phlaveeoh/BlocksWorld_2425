@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import MatrixMapper as mm
 
 # Con get_contour_depth posso calcolare la profondità del contorno che sto analizzando
 def get_contour_depth(hierarchy, idx):
@@ -11,7 +12,7 @@ def get_contour_depth(hierarchy, idx):
     return depth
 
 # controllare se ci sono solamente 6 numeri
-def sborra(numeri):
+def lastStand(numeri):
     if len(numeri) > 6:
         exit()
     if 7 in numeri or 8 in numeri or 9 in numeri:
@@ -42,36 +43,36 @@ def riconosci_immagine(percorsoImmagine, model):
     # Converto l'immagine in scala di grigi
     gray = cv2.cvtColor(immagine, cv2.COLOR_BGR2GRAY)
     gray = cv2.bitwise_not(gray)  # Inverte i colori per avere lo sfondo nero e le cifre bianche
-    cv2.imshow("Gray", gray)
-    cv2.waitKey(0)
+    #cv2.imshow("Gray", gray)
+    #cv2.waitKey(0)
 
     # Applico un leggero blur per ridurre il rumore
     blurred = cv2.medianBlur(gray, 7)
-    cv2.imshow("Blurred", blurred)
-    cv2.waitKey(0)
+    #cv2.imshow("Blurred", blurred)
+    #cv2.waitKey(0)
 
     # Dilato l'immagine per inspessire le cifre
     dilated = cv2.erode(blurred, (3, 3), iterations=2)
-    cv2.imshow("Dilated", dilated)
-    cv2.waitKey(0)
+    #cv2.imshow("Dilated", dilated)
+    #cv2.waitKey(0)
 
     # Applico una threshold adattiva per ottenere un'immagine binaria
     thresholded = cv2.adaptiveThreshold(dilated, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-    cv2.imshow("Adaptive Threshold", thresholded)
-    cv2.waitKey(0)
+    #cv2.imshow("Adaptive Threshold", thresholded)
+    #cv2.waitKey(0)
 
     # Applico apertura per rimuovere piccoli rumori (erode poi dilate)
     kernelApertura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     opened = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernelApertura)
-    cv2.imshow("Opened", opened)
-    cv2.waitKey(0)
+    #cv2.imshow("Opened", opened)
+    #cv2.waitKey(0)
 
     # Applico closing per riempire i contorni vuoti (dilate poi erode)
     kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19))
     closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernelChiusura)
-    cv2.imshow('Closed', closed)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.imshow('Closed', closed)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
 
     # -------------------------
     # Riconoscimento dei numeri
@@ -102,18 +103,18 @@ def riconosci_immagine(percorsoImmagine, model):
         
         # Estraggo la ROI (Region of Interest)
         roi = closed[y:y+h, x:x+w]
-        cv2.imshow("ROI", roi)
-        cv2.waitKey(0)
+        #cv2.imshow("ROI", roi)
+        #cv2.waitKey(0)
         
         # Aggiungo un bordo alla ROI per migliorare la previsione
         roi_bordered = cv2.copyMakeBorder(roi, top=30, bottom=30, left=30, right=30, borderType=cv2.BORDER_CONSTANT, value=0)
-        cv2.imshow("ROI con bordo", roi_bordered)
-        cv2.waitKey(0)
+        #cv2.imshow("ROI con bordo", roi_bordered)
+        #cv2.waitKey(0)
         
         # Ridimensiono la ROI a 28x28 pixel (dimensione del dataset MNIST)
         roi_resized = cv2.resize(roi_bordered, (28, 28), interpolation=cv2.INTER_AREA)
-        cv2.imshow("ROI", roi_resized)
-        cv2.waitKey(0)
+        #cv2.imshow("ROI", roi_resized)
+        #cv2.waitKey(0)
         
         # Normalizzo l'immagine per il modello di predizione(valori tra 0 e 1)
         roi_normalized = roi_resized.astype("float32") / 255.0
@@ -123,16 +124,12 @@ def riconosci_immagine(percorsoImmagine, model):
         # Eseguo la previsione usando il modello
         prediction = model.predict(roi_normalized)
         predicted_digit = np.argmax(prediction)
-        print("Cifra Predetta:",predicted_digit)
+        #print("Cifra Predetta:",predicted_digit)
         
         # Salvo il numero che ho trovato e le sue coordinate
         numero.append(predicted_digit)
-        print(f"Numero trovato {predicted_digit}")
         xMio.append(x)
         yMio.append(y)
-        print(numero)
-        print(xMio)
-        print(yMio)
         
         # Disegno un rettangolo attorno alla cifra trovata e scrivo il numero predetto
         cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
@@ -150,5 +147,5 @@ def riconosci_immagine(percorsoImmagine, model):
     # -------------------------
     # Operazioni finali per togliere doppioni e numeri non validi
     # -------------------------
-    sborra(numero, xMio, yMio)
-    return list(zip(numero,xMio,yMio))
+    lastStand(numero)
+    return mm.digitalizza(list(zip(numero,xMio,yMio)))
