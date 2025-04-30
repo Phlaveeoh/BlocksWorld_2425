@@ -3,6 +3,62 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
+<<<<<<< Updated upstream
+=======
+# -------------------------
+# Creazione e addestramento del modello MLP con i dati combinati
+# -------------------------
+# vecchio : model = load_model("Progettone\\BlocksWorld_2425\\modelloDenso.keras")
+model = load_model(".\\modelloDenso.keras")
+
+# -------------------------
+# Preprocessing dell'immagine
+# -------------------------
+# Carico l'immagine
+# vecchio : immagine = cv2.imread('BlocksWorld_2425\\test_immagini\\scenaTelefono5.jpg')
+immagine = cv2.imread('.\\test_immagini\\scenaTelefono4.jpg')
+
+# Converto l'immagine in scala di grigi
+gray = cv2.cvtColor(immagine, cv2.COLOR_BGR2GRAY)
+gray = cv2.bitwise_not(gray)  # Inverte i colori per avere lo sfondo nero e le cifre bianche
+cv2.imshow("Gray", gray)
+cv2.waitKey(0)
+
+# Applico un leggero blur per ridurre il rumore
+blurred = cv2.medianBlur(gray, 7)
+cv2.imshow("Blurred", blurred)
+cv2.waitKey(0)
+
+# Dilato l'immagine per inspessire le cifre
+dilated = cv2.erode(blurred, (3, 3), iterations=2)
+cv2.imshow("Dilated", dilated)
+cv2.waitKey(0)
+
+# Applico una threshold adattiva per ottenere un'immagine binaria
+thresholded = cv2.adaptiveThreshold(dilated, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+cv2.imshow("Adaptive Threshold", thresholded)
+cv2.waitKey(0)
+
+# Applico apertura per rimuovere piccoli rumori (erode poi dilate)
+kernelApertura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+opened = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernelApertura)
+cv2.imshow("Opened", opened)
+cv2.waitKey(0)
+
+# Applico closing per riempire i contorni vuoti (dilate poi erode)
+kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (19, 19))
+closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernelChiusura)
+cv2.imshow('Closed', closed)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+# -------------------------
+# Riconoscimento dei numeri
+# -------------------------
+# Ora trovo i contorni nell'immagine
+contours, hierarchy = cv2.findContours(closed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+hierarchy = hierarchy[0]  # shape (N, 4)
+>>>>>>> Stashed changes
 
 # Con get_contour_depth posso calcolare la profondità del contorno che sto analizzando
 def get_contour_depth(hierarchy, idx):
