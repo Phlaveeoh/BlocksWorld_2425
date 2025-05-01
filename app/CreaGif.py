@@ -9,10 +9,10 @@ bg_color = (255, 255, 255)
 background_image_path = ".\\src\\Background_01.png"
 
 # Parametri blocchi
-block_height            = 75
-block_width             = 75
-block_bottom_offset     = 10
-block_left_offset       = 10
+block_height             = 75
+block_width              = 75
+block_bottom_offset      = 10
+block_left_offset        = 10
 block_sprites_path       = [
     ".\\src\\Block_Sprite_01.png", # Sprite 01
     ".\\src\\Block_Sprite_02.png", # Sprite 02
@@ -244,6 +244,7 @@ def convert_matrixY_into_frameY(y):
     return height - ((block_grid_rows - y) * block_height) - block_bottom_offset
 
 def reset():
+    global frames, blocks, robotic_arm
     frames = []
     blocks = []
     robotic_arm = RoboticArm()
