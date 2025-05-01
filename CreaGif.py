@@ -1,9 +1,10 @@
 from PIL import Image, ImageDraw, ImageFont
+import random
 # pip install pillow <- Comando che dovete fare se non avete Pillow :)
 
 # Parametri finestra
 width    = 1000
-height   = 1000
+height   = 800
 bg_color = (255, 255, 255)
 
 # Parametri blocchi
@@ -15,7 +16,15 @@ block_outline_color     = "#000"
 block_outline_thickness = 5
 block_fill_color        = "#fff"
 block_font_size         = 30
-block_font_color        = "#000"
+block_font_color        = "#fff"
+block_sprites_path       = [
+    ".\\src\\Block_Sprite_01.png", # Sprite 01
+    ".\\src\\Block_Sprite_02.png", # Sprite 02
+    ".\\src\\Block_Sprite_03.png"  # Sprite 03
+]
+block_grid_rows = 6
+block_grid_columns = 6
+
 
 # Parametri binario mano robotica
 roboticarm_track_height    = 50
@@ -41,15 +50,23 @@ roboticarm_claw_thickness = 5
 roboticarm_arm_thickness = 4
 roboticarm_arm_color     = "#505050"
 
-roboticarm_horizontal_speed = 15
+# Velocità movimenti
+roboticarm_horizontal_speed = 20
+roboticarm_vertical_speed = 20
+
+git_path = ".\\static\\results\\BlocksWorld_Solution.gif"
 
 
 class RoboticArm:
     def __init__(self):
         self.posY = roboticarm_default_height
         self.posX = width/2
+        self.grabbed_block = None
         
     def draw(self, frame):
+        # Aggiorna la posizione del blocco afferrato
+        self.move_grabbed_block()
+        
         half_track_thickness = roboticarm_track_thickness/2
         half_slider_width = roboticarm_slider_width/2
         half_slider_height = roboticarm_slider_height/2
@@ -78,36 +95,73 @@ class RoboticArm:
         ], fill=roboticarm_slider_color)
 
 
-    def slide_to(self, x):
-        direction = 0
-        if (x == self.posX):
-            return
-        elif (x > self.posX):
-            direction += roboticarm_horizontal_speed
-        else:
-            direction -= roboticarm_horizontal_speed
+    def slide_horizzontally_to(self, x):
+        direction = (1 if x > self.posX else -1) * roboticarm_horizontal_speed
 
         while abs(x - self.posX) > roboticarm_horizontal_speed:
             self.posX += direction
+            self.move_grabbed_block()
             draw_everything()
 
         self.posX = x
         draw_everything()
+        gif_sleep(10)
+
+    def slide_vertically_to(self, y):
+        direction = (1 if y > self.posY else -1) * roboticarm_vertical_speed
+        while abs(y - self.posY) > roboticarm_vertical_speed:
+            self.posY += direction
+            self.move_grabbed_block()
+            draw_everything()
+
+        self.posY = y
+        draw_everything()
+        gif_sleep(10)
+
+    def move_grabbed_block(self):
+        if (self.grabbed_block == None):
+            return
+        self.grabbed_block.posY = self.posY
+        self.grabbed_block.posX = int(self.posX - roboticarm_width/2 + roboticarm_claw_thickness)
+
+    def grab(self, block):
+        self.slide_horizzontally_to(block.posX + roboticarm_width/2 - roboticarm_claw_thickness/2)
+        self.slide_vertically_to(block.posY)
+        self.grabbed_block = block
+        self.slide_vertically_to(roboticarm_default_height)
+
+    def release(self, matrixX, matrixY):
+        frameX = convert_matrixX_into_frameX(matrixX) + roboticarm_width/2 - roboticarm_claw_thickness
+        frameY = convert_matrixY_into_frameY(matrixY)
+
+        self.slide_horizzontally_to(frameX)
+        self.slide_vertically_to(frameY)
+
+        self.grabbed_block.matrixPosX = matrixX
+        self.grabbed_block.matrixPosY = matrixY
+        self.grabbed_block = None
+
+        self.slide_vertically_to(roboticarm_default_height)
 
 
 class Block:
     # PosX e PosY (quelli passati come parametri del costruttore, non quelli del self) non indicano la posizione nella gif ma nella matrice, occhio
     def __init__(self, value, posY, posX):
         self.value = value
+        self.sprite = random.choice(block_sprites_path)
         self.matrixPosX = posX
         self.matrixPosY = posY
-        self.posX = (posX * (width // len(matrice_test[0]))) + block_left_offset
-        self.posY = height - ((len(matrice_test) - posY) * block_height) - block_bottom_offset
+        self.posX = convert_matrixX_into_frameX(posX)
+        self.posY = convert_matrixY_into_frameY(posY)
         print(f"{value}: {self.posX}-{self.posY}")
 
     def draw(self, frame):
         draw = ImageDraw.Draw(frame)
-        draw.rectangle([(self.posX, self.posY), (self.posX + block_width, self.posY + block_height)], fill=block_fill_color, outline=block_outline_color, width=block_outline_thickness)
+        image = Image.open(self.sprite)
+
+        frame.paste(image, (self.posX, self.posY, self.posX + block_width, self.posY + block_height), image)
+        #draw.rectangle([(self.posX, self.posY), (self.posX + block_width, self.posY + block_height)], fill=block_fill_color, outline=block_outline_color, width=block_outline_thickness)
+        
         font = ImageFont.truetype("arial.ttf", block_font_size)
         
         # Dimensioni testo TextBBox
@@ -118,6 +172,9 @@ class Block:
         text_y = self.posY + (block_height - text_height - block_font_size/2) / 2
         
         draw.text((text_x, text_y), f"{self.value}", font=font, fill=block_font_color)
+
+    def has_this_matrix_coordinates(self, x, y):
+        return self.matrixPosY == y and self.matrixPosX == x
 
 
 # Lista dei frame
@@ -134,7 +191,12 @@ def draw_everything():
     robotic_arm.draw(frame)
     frames.append(frame)
 
-def create(matrix):
+def gif_sleep(frames_length):
+    for i in range(frames_length):
+        draw_everything()
+
+def create(matrix, moves):
+    print(moves)
     for x in range(len(matrix)):
         for y in range(len(matrix[x])):
             value = matrix[y][x]
@@ -147,20 +209,25 @@ def create(matrix):
     
     draw_everything()
 
-    # TEST MOVIMENTI DEL ROBOTTINO BELLISSIMO
+    for move in moves:
+        x, y, newX, newY = move
+        block = get_block_from_matrix_coordinates(x, y)
+        robotic_arm.grab(block)
+        robotic_arm.release(newX, newY)
+        print(block)
 
-    # Muove la mano robotica fino al 1° blocco che trova nel vettore
-    robotic_arm.slide_to(blocks[0].posX + roboticarm_width/2)
-    # Crea 20 frame senza cambiamenti
-    for _ in range(20):
-        draw_everything()
 
-    # Fa il movimento completo fino a sinistra, poi fino a destra poi ritorna al centro e ricomincia la GIF
-    robotic_arm.slide_to(0)
-    robotic_arm.slide_to(width - block_left_offset - roboticarm_width)
-    robotic_arm.slide_to(width/2)
+    frames[0].save(git_path, save_all=True, append_images=frames[1:], duration=40, loop=0)
+    return git_path
 
-    frames[0].save("BlocksWorld_Solution.gif", save_all=True, append_images=frames[1:], duration=50, loop=0)
+def get_block_from_matrix_coordinates(x, y):
+    for block in blocks:
+        if block.has_this_matrix_coordinates(x, y):
+            return block
+    return None
 
-matrice_test = [[1,2,3,1,4,5],[0,0,0,0,0,7],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,8,9]]
-create(matrice_test)
+def convert_matrixX_into_frameX(x):
+    return (x * (width // block_grid_columns)) + block_left_offset
+
+def convert_matrixY_into_frameY(y):
+    return height - ((block_grid_rows - y) * block_height) - block_bottom_offset

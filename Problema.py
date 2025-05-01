@@ -26,6 +26,8 @@ def execute(name: str, algorithm: Callable, problem: Problem, *args) -> None:
         print(f"{GREEN}Path Length:{RESET} {sol.depth}")
     print(f"{GREEN}Time:{RESET} {end - start} s")
 
+    return sol.solution()
+
 #Algoritmo di ricerca best_first_search
 def bfss(problem: Problem, f: Callable) -> Node:
     node: Node = Node(problem.initial)

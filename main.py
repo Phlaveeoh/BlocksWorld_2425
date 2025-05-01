@@ -1,6 +1,7 @@
 import Riconoscimento as ric
 import Problema as problema
 from keras.models import load_model
+import CreaGif
 
 pathImgInput = ".\\immagini\\scenaTelefono3.jpg"
 pathImgOutput = ".\\immagini\\scenaTelefono5.jpg"
@@ -22,6 +23,8 @@ print(matriceOutput)
 # Costruisco il problema
 problemone = problema.BlocksWorldProblem(problema.Board(matriceInput), problema.Board(matriceOutput))
 # Eseguo l'algoritmo A* per trovare il percorso ottimale
-problema.execute("Da scena 3 a 5", problema.aStar, problemone)
+soluzione = problema.execute("Da scena 3 a 5", problema.aStar, problemone)
+
+CreaGif.create(matriceInput, soluzione)
 
 # Creo la gif finale
