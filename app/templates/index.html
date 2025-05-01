@@ -3,22 +3,141 @@
 <head>
   <meta charset="UTF-8">
   <title>BlocksWorld</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #ece9e6, #ffffff);
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #007bff;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    label {
+      font-weight: 500;
+    }
+    input[type="file"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    input[type="submit"] {
+      background: #007bff;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    input[type="submit"]:hover {
+      background: #0056b3;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 10px;
+      background: #e9ecef;
+      border-left: 4px solid #007bff;
+      border-radius: 4px;
+      font-size: 14px;
+      line-height: 1.5;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #result img {
+      max-width: 100%;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Carica le immagini</h1>
-  <form method="POST" action="/" enctype="multipart/form-data">
-    <label>Immagine di Input:</label><br>
-    <input type="file" name="input_img" required><br><br>
+  <div class="container">
+    <h1>BlocksWorld</h1>
+    <form id="uploadForm" method="POST" action="/" enctype="multipart/form-data">
+      <label>Immagine di Input:</label>
+      <input type="file" name="input_img" required>
+      <label>Immagine di Output:</label>
+      <input type="file" name="output_img" required>
+      <input type="submit" value="Esegui">
+    </form>
 
-    <label>Immagine di Output:</label><br>
-    <input type="file" name="output_img" required><br><br>
+    <div id="status" style="display: none"></div>
+    <div id="result"></div>
+  </div>
 
-    <input type="submit" value="Esegui">
-  </form>
-  
-  {% if gif_url %}
-    <h2>Risultato</h2>
-    <img src="{{ gif_url }}" alt="GIF del risultato">
-  {% endif %}
+  <script>
+    const socket = io();
+
+    let firstStatusMessage = true;
+    function addStatus(statusMessage) {
+      const statusElement = document.getElementById('status');
+      statusElement.style.display = "block";
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      statusElement.innerHTML += `${firstStatusMessage ? '' : '<br>'}[${timeString}] ${statusMessage}`;
+      statusElement.scrollTop = statusElement.scrollHeight;
+      firstStatusMessage = false;
+    }
+
+    // Listener dei messaggi di stato
+    socket.on('status', function(data) {
+      addStatus(data.msg);
+    });
+
+    // Visualizza la GIF quando è pronta
+    socket.on('gif_ready', function(data) {
+      addStatus("GIF generata e caricata sulla pagina.");
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<h2>Risultato</h2><img src="' + data.url + '" alt="GIF del risultato">';
+    });
+
+    // Gestione del submit per non ricaricare la pagina
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('uploadForm').remove();
+      addStatus("Richiesta inviata al Server.")
+
+      const formData = new FormData(this);
+      fetch('/', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.text())
+      .then(html => {
+        console.log("Operazione completata.");
+      })
+      .catch(err => console.error(err));
+    });
+  </script>
 </body>
 </html>
