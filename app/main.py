@@ -7,7 +7,7 @@ from flask_socketio import SocketIO
 from keras.models import load_model
 import Riconoscimento as ric
 import Problema as problema
-import CreaGif
+from GifCreator import GifCreator
 import time
 
 app = Flask(__name__,
@@ -66,16 +66,18 @@ def process_images(input_path, output_path):
     
     # Creazione della GIF
     start_gif_time = time.time()
-    CreaGif.create(matriceInput, soluzione)
+    gifCreator = GifCreator(matriceInput, soluzione)
+    percorsoGif = gifCreator.create()
 
     # Calcola il tempo per la generazione della GIF
     gif_time = time.time() - start_gif_time
     socketio.emit('status', {'msg': f'GIF generata in {gif_time:.2f} secondi.'})
+    socketio.emit('status', {'msg': f'GIF caricata al percorso "{percorsoGif}".'})
     socketio.sleep(0)
     
     # Per chiamare url_for che necessita del contesto, crea un app context
     with app.app_context():
-        gif_url = url_for('static', filename='result/BlocksWorld_Solution.gif', _external=True)
+        gif_url = url_for('static', filename=percorsoGif, _external=True)
     
     # Invia il messaggio finale con l'URL della GIF pronta
     socketio.emit('gif_ready', {'url': gif_url})

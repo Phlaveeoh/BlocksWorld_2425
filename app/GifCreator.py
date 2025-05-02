@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import random
 import time
+import secrets, string
 
 # Parametri finestra
 width    = 650
@@ -57,16 +58,81 @@ roboticarm_arm_color     = "#505050"
 roboticarm_horizontal_speed = 40
 roboticarm_vertical_speed = 40
 
-gif_path = ".\\static\\result\\BlocksWorld_Solution.gif"
+gif_path = ".\\static\\result\\"
 frame_duration = 30
 
 # Ottimizzazione del codice e del caricamento dei file
 SPRITE_CACHE = {}
+
+class GifCreator:
+    def __init__(self, matrix, moves):
+        self.generatorId = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+        self.finalFileName = f"BlocksWorld_Solution_ID-{self.generatorId}.gif"
+        self.matrix = matrix
+        self.moves = moves
+        self.blocks = []
+        self.frames = []
+        self.robotic_arm = RoboticArm(self)
+        self.xLength = len(self.matrix)
+        self.yLength = 0 if self.xLength == 0 else len(self.matrix[0])
+
+    def create(self):
+        start_time = time.time()
+    
+        for x in range(self.xLength):
+            for y in range(self.yLength):
+                value = self.matrix[y][x]
+            
+                if (value == 0):
+                    continue
+            
+                block = Block(value, x, y)
+                self.blocks.append(block)
+    
+        self.draw_everything()
+
+        for move in self.moves:
+            x, y, newX, newY = move
+            block = get_block_from_matrix_coordinates(self.blocks, x, y)
+            self.robotic_arm.grab(block)
+            self.robotic_arm.release(newX, newY)
+
+        self.robotic_arm.slide_horizzontally_to(width/2)
+
+        self.frames[0].save(f"{gif_path}\\{self.finalFileName}", save_all=True, append_images=self.frames[1:], duration=frame_duration, loop=0, optimize=True)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"La GIF è stata generata in {execution_time:.2f} secondi")
+
+        return f"result/{self.finalFileName}"
+
+
+    def draw_everything(self):
+        frame = Image.new("RGB", (width, height), bg_color)
+        #frame = background_image.copy()
+        for block in self.blocks:
+            block.draw(frame)
+        self.robotic_arm.draw(frame)
+        self.frames.append(frame)
+
+    def gif_sleep(self, pause_duration):
+        for _ in range(pause_duration // frame_duration):
+            self.frames.append(self.frames[-1])
+
+
+
+
+# -------------------------
+# Classe RoboticArm
+# Rappresenta la mano robotica che si muove per la scena per afferrare e spostare i blocchi.
+# -------------------------
 class RoboticArm:
-    def __init__(self):
+    def __init__(self, gifCreator):
         self.posY = roboticarm_default_height
         self.posX = width/2
         self.grabbed_block = None
+        self.gifCreator = gifCreator
         
     def draw(self, frame):
         half_track_thickness = roboticarm_track_thickness/2
@@ -103,8 +169,8 @@ class RoboticArm:
             if abs(x - self.posX) <= roboticarm_horizontal_speed:
                 self.posX = x
             self.move_grabbed_block()
-            draw_everything()
-        gif_sleep(100)
+            self.gifCreator.draw_everything()
+        self.gifCreator.gif_sleep(100)
 
     def slide_vertically_to(self, y):
         direction = (1 if y > self.posY else -1) * roboticarm_vertical_speed
@@ -113,8 +179,8 @@ class RoboticArm:
             if abs(y - self.posY) <= roboticarm_vertical_speed:
                 self.posY = y
             self.move_grabbed_block()
-            draw_everything()
-        gif_sleep(100)
+            self.gifCreator.draw_everything()
+        self.gifCreator.gif_sleep(100)
 
     def move_grabbed_block(self):
         if (self.grabbed_block == None):
@@ -142,6 +208,12 @@ class RoboticArm:
         self.slide_vertically_to(roboticarm_default_height)
 
 
+
+
+# -------------------------
+# Classe Block
+# Rappresenta i blocchi che verranno poi spostati nella GIF per ordinarli come richiesto dall'utilizzatore.
+# -------------------------
 class Block:
     # PosX e PosY (quelli passati come parametri del costruttore, non quelli del self) non indicano la posizione nella gif ma nella matrice, occhio
     def __init__(self, value, posY, posX):
@@ -178,60 +250,11 @@ class Block:
         return self.matrixPosY == y and self.matrixPosX == x
 
 
-# Lista dei frame
-frames = []
-# Lista blocchi
-blocks = []
-# Mano robotica
-robotic_arm = RoboticArm()
+
 
 background_image = Image.open(background_image_path).convert("RGB").resize((width, height))
-def draw_everything():
-    frame = Image.new("RGB", (width, height), bg_color)
-    #frame = background_image.copy()
-    for block in blocks:
-        block.draw(frame)
-    robotic_arm.draw(frame)
-    frames.append(frame)
 
-def gif_sleep(pause_duration):
-    for _ in range(pause_duration // frame_duration):
-        frames.append(frames[-1])
-
-def create(matrix, moves):
-    start_time = time.time()
-    
-    for x in range(len(matrix)):
-        for y in range(len(matrix[x])):
-            value = matrix[y][x]
-            
-            if (value == 0):
-                continue
-            
-            block = Block(value, x, y)
-            blocks.append(block)
-    
-    draw_everything()
-
-    for move in moves:
-        x, y, newX, newY = move
-        block = get_block_from_matrix_coordinates(x, y)
-        robotic_arm.grab(block)
-        robotic_arm.release(newX, newY)
-
-    robotic_arm.slide_horizzontally_to(width/2)
-
-    frames[0].save(gif_path, save_all=True, append_images=frames[1:], duration=frame_duration, loop=0, optimize=True)
-
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"La GIF è stata generata in {execution_time:.2f} secondi")
-
-    reset()
-
-    return gif_path
-
-def get_block_from_matrix_coordinates(x, y):
+def get_block_from_matrix_coordinates(blocks, x, y):
     for block in blocks:
         if block.has_this_matrix_coordinates(x, y):
             return block
@@ -242,9 +265,3 @@ def convert_matrixX_into_frameX(x):
 
 def convert_matrixY_into_frameY(y):
     return height - ((block_grid_rows - y) * block_height) - block_bottom_offset
-
-def reset():
-    global frames, blocks, robotic_arm
-    frames = []
-    blocks = []
-    robotic_arm = RoboticArm()
