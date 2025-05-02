@@ -174,3 +174,11 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Ignora tutto dentro uploads/ e static/
+uploads/*
+static/result/*
+
+# Ma NON ignorare le cartelle stesse (aggiungile vuote)
+!uploads/.gitkeep
+!static/result/.gitkeep
