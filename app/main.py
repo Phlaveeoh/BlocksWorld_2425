@@ -24,7 +24,7 @@ app.config['PREFERRED_URL_SCHEME'] = 'http'
 socketio = SocketIO(app)
 
 # Carica il modello una sola volta (assicurati che il path sia corretto)
-modello = load_model("models\\modelloDenso.keras")
+modello = load_model("models\\modello.keras")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
