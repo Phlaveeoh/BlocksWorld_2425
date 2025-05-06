@@ -9,6 +9,7 @@ import Riconoscimento as ric
 import Problema as problema
 from GifCreator import GifCreator
 import time
+import MatrixMapper as mm
 
 app = Flask(__name__,
             static_folder=os.path.join(os.path.dirname(__file__), '../static'),
@@ -51,8 +52,34 @@ def process_images(input_path, output_path):
     start_time = time.time()
 
     # Elaborazione delle immagini
-    matriceInput = ric.riconosci_immagine(input_path, modello)
-    matriceOutput = ric.riconosci_immagine(output_path, modello)
+    tuplaInput = ric.riconosci_immagine(input_path, modello)
+    tuplaOutput = ric.riconosci_immagine(output_path, modello)
+
+    if len(tuplaInput) == len(tuplaOutput):
+        diversi = False
+        for i in range(len(tuplaInput)):
+            numero = tuplaInput[i][0]
+            for j in range(len(tuplaOutput)):
+                numero2 = tuplaOutput[j][0]
+                if numero == numero2:
+                    diversi = False
+                    break
+                diversi = True
+        if diversi == True:
+            socketio.emit('status', {'msg': 'Le immagini non sono compatibili.'})
+            socketio.sleep(0)
+            #TODO: lancia eccezione nella GUI e riavvia il form
+            return
+    else:
+        socketio.emit('status', {'msg': 'Le immagini non sono compatibili.'})
+        socketio.sleep(0)
+        #TODO: lancia eccezione nella GUI e riavvia il form
+        return
+            
+    matriceInput = mm.digitalizza(tuplaInput)
+    matriceOutput = mm.digitalizza(tuplaOutput)
+    print(f"Input Matrix: {matriceInput}")
+    print(f"Output Matrix: {matriceOutput}")
     
     # Definisci e risolvi il problema
     problemone = problema.BlocksWorldProblem(problema.Board(matriceInput), problema.Board(matriceOutput))
