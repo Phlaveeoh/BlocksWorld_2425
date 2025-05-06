@@ -69,7 +69,7 @@ def riconosci_immagine(percorsoImmagine, model):
     #cv2.waitKey(0)
 
     # Applico closing per riempire i contorni vuoti (dilate poi erode)
-    kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
+    kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
     closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernelChiusura)
     #cv2.imshow('Closed', closed)
     #cv2.waitKey(0)
