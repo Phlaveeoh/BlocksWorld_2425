@@ -9,6 +9,7 @@ import Riconoscimento as ric
 import Problema as problema
 from GifCreator import GifCreator
 import time
+from collections import Counter
 import MatrixMapper as mm
 
 app = Flask(__name__,
@@ -55,26 +56,17 @@ def process_images(input_path, output_path):
     tuplaInput = ric.riconosci_immagine(input_path, modello)
     tuplaOutput = ric.riconosci_immagine(output_path, modello)
 
-    #Controllo se le due tuple sono compatibili prima di passarle al problema
-    if len(tuplaInput) == len(tuplaOutput):
-        diversi = False
-        for i in range(len(tuplaInput)):
-            numero = tuplaInput[i][0]
-            for j in range(len(tuplaOutput)):
-                numero2 = tuplaOutput[j][0]
-                if numero == numero2:
-                    diversi = False
-                    break
-                diversi = True
-        if diversi == True:
-            socketio.emit('status', {'msg': 'Le immagini non sono compatibili.'})
-            socketio.sleep(0)
-            #TODO: lancia eccezione nella GUI e riavvia il form
-            return
-    else:
-        socketio.emit('status', {'msg': 'Le immagini non sono compatibili.'})
+    # Estrai solo i numeri dalle tuple
+    numeriInput = [num for num, _, _ in tuplaInput]
+    numeriOutput = [num for num, _, _ in tuplaOutput]
+    # Confronta usando Counter
+    if Counter(numeriInput) == Counter(numeriOutput):
+        socketio.emit('status', {'msg': 'I numeri coincidono.'})
         socketio.sleep(0)
-        #TODO: lancia eccezione nella GUI e riavvia il form
+    else:
+        socketio.emit('status', {'msg': 'I numeri NON coincidono.'})
+        socketio.sleep(0)
+        #TODO: Momo stacca tutto se i numeri non coincidono e riavvia il form
         return
             
     matriceInput = mm.digitalizza(tuplaInput)
