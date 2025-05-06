@@ -44,36 +44,36 @@ def riconosci_immagine(percorsoImmagine, model):
     # Converto l'immagine in scala di grigi
     gray = cv2.cvtColor(immagine, cv2.COLOR_BGR2GRAY)
     gray = cv2.bitwise_not(gray)  # Inverte i colori per avere lo sfondo nero e le cifre bianche
-    cv2.imshow("Gray", gray)
-    cv2.waitKey(0)
+    #cv2.imshow("Gray", gray)
+    #cv2.waitKey(0)
 
     # Applico un leggero blur per ridurre il rumore
     blurred = cv2.medianBlur(gray, 7)
-    cv2.imshow("Blurred", blurred)
-    cv2.waitKey(0)
+    #cv2.imshow("Blurred", blurred)
+    #cv2.waitKey(0)
 
     # Dilato l'immagine per inspessire le cifre
     dilated = cv2.erode(blurred, (3, 3), iterations=2)
-    cv2.imshow("Dilated", dilated)
-    cv2.waitKey(0)
+    #cv2.imshow("Dilated", dilated)
+    #cv2.waitKey(0)
 
     # Applico una threshold adattiva per ottenere un'immagine binaria
     thresholded = cv2.adaptiveThreshold(dilated, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-    cv2.imshow("Adaptive Threshold", thresholded)
-    cv2.waitKey(0)
+    #cv2.imshow("Adaptive Threshold", thresholded)
+    #cv2.waitKey(0)
 
     # Applico apertura per rimuovere piccoli rumori (erode poi dilate)
     kernelApertura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     opened = cv2.morphologyEx(thresholded, cv2.MORPH_OPEN, kernelApertura)
-    cv2.imshow("Opened", opened)
-    cv2.waitKey(0)
+    #cv2.imshow("Opened", opened)
+    #cv2.waitKey(0)
 
     # Applico closing per riempire i contorni vuoti (dilate poi erode)
     kernelChiusura = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
     closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernelChiusura)
-    cv2.imshow('Closed', closed)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.imshow('Closed', closed)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
 
     # -------------------------
     # Riconoscimento dei numeri
@@ -140,10 +140,10 @@ def riconosci_immagine(percorsoImmagine, model):
     # Le ridimensiono per renderle più leggibili
     image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
     image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
-    cv2.imshow("Threshold", image_resized2)
-    cv2.imshow("Risultato", image_resized)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #cv2.imshow("Threshold", image_resized2)
+    #cv2.imshow("Risultato", image_resized)
+    #cv2.waitKey(0)
+    #cv2.destroyAllWindows()
 
     # -------------------------
     # Operazioni finali per togliere doppioni e numeri non validi

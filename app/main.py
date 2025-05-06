@@ -55,6 +55,7 @@ def process_images(input_path, output_path):
     tuplaInput = ric.riconosci_immagine(input_path, modello)
     tuplaOutput = ric.riconosci_immagine(output_path, modello)
 
+    #Controllo se le due tuple sono compatibili prima di passarle al problema
     if len(tuplaInput) == len(tuplaOutput):
         diversi = False
         for i in range(len(tuplaInput)):
@@ -78,8 +79,6 @@ def process_images(input_path, output_path):
             
     matriceInput = mm.digitalizza(tuplaInput)
     matriceOutput = mm.digitalizza(tuplaOutput)
-    print(f"Input Matrix: {matriceInput}")
-    print(f"Output Matrix: {matriceOutput}")
     
     # Definisci e risolvi il problema
     problemone = problema.BlocksWorldProblem(problema.Board(matriceInput), problema.Board(matriceOutput))
