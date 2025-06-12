@@ -2,30 +2,32 @@ from PIL import Image, ImageDraw, ImageFont
 import random
 import time
 import secrets, string
+import os
 
 # Parametri finestra
 width    = 650
 height   = 650
 bg_color = (255, 255, 255)
-background_image_path = ".\\src\\Background_01.png"
+background_image_path = os.path.join("src", "Background_01.png")
 
 # Parametri blocchi
 block_height             = 75
 block_width              = 75
 block_bottom_offset      = 10
 block_left_offset        = 10
-block_sprites_path       = [
-    ".\\src\\Block_Sprite_01.png", # Sprite 01
-    ".\\src\\Block_Sprite_02.png", # Sprite 02
-    ".\\src\\Block_Sprite_03.png"  # Sprite 03
+block_sprites_path = [
+    os.path.join("src", "Block_Sprite_01.png"),  # Sprite 01
+    os.path.join("src", "Block_Sprite_02.png"),  # Sprite 02
+    os.path.join("src", "Block_Sprite_03.png")   # Sprite 03
 ]
+
 block_number_sprites_path = [
-    ".\\src\\Number_Sprite_01.png", # Sprite 01
-    ".\\src\\Number_Sprite_02.png", # Sprite 02
-    ".\\src\\Number_Sprite_03.png", # Sprite 03
-    ".\\src\\Number_Sprite_04.png", # Sprite 04
-    ".\\src\\Number_Sprite_05.png", # Sprite 05
-    ".\\src\\Number_Sprite_06.png", # Sprite 06
+    os.path.join("src", "Number_Sprite_01.png"),  # Sprite 01
+    os.path.join("src", "Number_Sprite_02.png"),  # Sprite 02
+    os.path.join("src", "Number_Sprite_03.png"),  # Sprite 03
+    os.path.join("src", "Number_Sprite_04.png"),  # Sprite 04
+    os.path.join("src", "Number_Sprite_05.png"),  # Sprite 05
+    os.path.join("src", "Number_Sprite_06.png")   # Sprite 06
 ]
 block_grid_rows = 6
 block_grid_columns = 6
@@ -58,7 +60,7 @@ roboticarm_arm_color     = "#505050"
 roboticarm_horizontal_speed = 40
 roboticarm_vertical_speed = 40
 
-gif_path = ".\\static\\result\\"
+gif_path = os.path.join("static", "result")
 frame_duration = 30
 
 # Ottimizzazione del codice e del caricamento dei file
@@ -99,13 +101,13 @@ class GifCreator:
 
         self.robotic_arm.slide_horizzontally_to(width/2)
 
-        self.frames[0].save(f"{gif_path}\\{self.finalFileName}", save_all=True, append_images=self.frames[1:], duration=frame_duration, loop=0, optimize=True)
+        self.frames[0].save(os.path.join(gif_path, self.finalFileName), save_all=True, append_images=self.frames[1:], duration=frame_duration, loop=0, optimize=True)
 
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"La GIF è stata generata in {execution_time:.2f} secondi")
 
-        return f"result/{self.finalFileName}"
+        return os.path.join("result", self.finalFileName)
 
 
     def draw_everything(self):

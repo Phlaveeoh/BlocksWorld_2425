@@ -16,16 +16,16 @@ app = Flask(__name__,
             static_folder=os.path.join(os.path.dirname(__file__), '../static'),
             template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['STATIC_FOLDER'] = 'static/result'
-app.config['SERVER_NAME'] = 'localhost:5000'
-app.config['PREFERRED_URL_SCHEME'] = 'http'
+app.config['STATIC_FOLDER'] = os.path.join('static', 'result')
+app.config['SERVER_NAME'] = 'blocksworld.it'
+app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Inizializza SocketIO
 socketio = SocketIO(app)
 
 # Carica il modello una sola volta (assicurati che il path sia corretto)
-modello = load_model("models\\modello.keras")
-
+modello = load_model(os.path.join('models', 'modello.keras'))
+ 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
