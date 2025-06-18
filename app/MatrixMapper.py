@@ -41,7 +41,7 @@ def digitalizza(nums):
         else:
             adjusted_x = x
 
-        col_index = int(floor((adjusted_x - min_x) / step_size)) if step_size > 0 else 0
+        col_index = int(round((adjusted_x - min_x) / step_size)) if step_size > 0 else 0
         if col_index >= NUM_COLS:
             col_index = NUM_COLS - 1
         columns[col_index].append(tup)
