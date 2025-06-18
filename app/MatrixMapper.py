@@ -1,5 +1,7 @@
 import numpy as np
 
+x_tolerance = 250
+
 def digitalizza(nums):
     # Crea una matrice 6x6 piena di zeri.
     mat = np.zeros((6, 6), dtype=int)
@@ -9,6 +11,11 @@ def digitalizza(nums):
         return mat
     
     # Trova il valore minimo e massimo di X fra tutti i numeri.
+    min_x = min(nums, key=lambda tup: tup[1])[1]
+    max_x = max(nums, key=lambda tup: tup[1])[1]
+
+    # Calcola la larghezza totale (distanza tra max_x e min_x).
+    width = max_x - min_x
     min_x = min(nums, key=lambda tup: tup[1])[1]
     max_x = max(nums, key=lambda tup: tup[1])[1]
     
@@ -23,7 +30,11 @@ def digitalizza(nums):
     # Distribuisce ogni tupla nella colonna (sarebbero gli step) corretta usando round() per arrotondare le piccole variazioni.
     for tup in nums:
         digit, x, y = tup
-        col_index = int(round((x - min_x) / step_size)) if step_size > 0 else 0
+
+        # Arrotonda x per tolleranza prima di calcolare col_index
+        adjusted_x = round((x - min_x) / x_tolerance) * x_tolerance + min_x
+
+        col_index = int(round((adjusted_x - min_x) / step_size)) if step_size > 0 else 0
         # Garanzia di non superare il limite di 6 colonne.
         if col_index >= 6:
             col_index = 5

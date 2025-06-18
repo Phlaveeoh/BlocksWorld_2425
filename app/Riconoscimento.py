@@ -97,9 +97,9 @@ def riconosci_immagine(percorsoImmagine, model):
         
         #Calcolo il rettangolo del contorno
         x, y, w, h = cv2.boundingRect(cnt)
-        
-        # se l'are del contorno è molto piccola la scartoperchè probabilmente è un rumore residuo
-        if cv2.contourArea(cnt) < 50:
+
+        # se l'area del contorno è molto piccola la scarto perchè probabilmente è un rumore residuo
+        if cv2.contourArea(cnt) < 100:
             continue
         
         # Estraggo la ROI (Region of Interest)
@@ -133,13 +133,13 @@ def riconosci_immagine(percorsoImmagine, model):
         yMio.append(y)
         
         # Disegno un rettangolo attorno alla cifra trovata e scrivo il numero predetto
-        cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        cv2.putText(immagine, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        #cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        #cv2.putText(immagine, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     # Mostro l'immagine dopo tutte le trasformazioni morfologiche e le predizioni fatte su di essa attraverso il modello
     # Le ridimensiono per renderle più leggibili
-    image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
-    image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
+    #image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
+    #image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
     #cv2.imshow("Threshold", image_resized2)
     #cv2.imshow("Risultato", image_resized)
     #cv2.waitKey(0)
