@@ -1,7 +1,8 @@
 import numpy as np
+from math import floor
 
 def digitalizza(nums):
-    print(nums)
+    print(f"Lista di tuple ricevute: {nums}")
     NUM_COLS = 6
     NUM_ROWS = 6
 
@@ -23,6 +24,8 @@ def digitalizza(nums):
     else:
         x_tolerance = 0
 
+    print(f"Tolleranza {x_tolerance}")
+
     # Calcolo dello step_size (divisione in 6 colonne)
     step_size = width / NUM_COLS if width != 0 else 1
 
@@ -38,7 +41,7 @@ def digitalizza(nums):
         else:
             adjusted_x = x
 
-        col_index = int(round((adjusted_x - min_x) / step_size)) if step_size > 0 else 0
+        col_index = int(floor((adjusted_x - min_x) / step_size)) if step_size > 0 else 0
         if col_index >= NUM_COLS:
             col_index = NUM_COLS - 1
         columns[col_index].append(tup)
@@ -53,5 +56,8 @@ def digitalizza(nums):
             if j < NUM_ROWS:
                 row_index = NUM_ROWS - 1 - j
                 mat[col_index, row_index] = digit
+
+    print("Matrice risultato:")
+    print(mat.tolist())
 
     return mat.tolist()

@@ -107,7 +107,7 @@ class GifCreator:
         execution_time = end_time - start_time
         print(f"La GIF è stata generata in {execution_time:.2f} secondi")
 
-        return os.path.join("result", self.finalFileName)
+        return f"result/{self.finalFileName}"
 
 
     def draw_everything(self):

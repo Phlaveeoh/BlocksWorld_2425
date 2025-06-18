@@ -17,8 +17,8 @@ app = Flask(__name__,
             template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['STATIC_FOLDER'] = os.path.join('static', 'result')
-app.config['SERVER_NAME'] = 'blocksworld.it'
-app.config['PREFERRED_URL_SCHEME'] = 'https'
+app.config['SERVER_NAME'] = 'localhost:5000'
+app.config['PREFERRED_URL_SCHEME'] = 'http'
 
 # Inizializza SocketIO
 socketio = SocketIO(app)
@@ -61,10 +61,10 @@ def process_images(input_path, output_path):
     numeriOutput = [num for num, _, _ in tuplaOutput]
     # Confronta usando Counter
     if Counter(numeriInput) == Counter(numeriOutput):
-        socketio.emit('status', {'msg': 'I numeri coincidono.'})
+        socketio.emit('status', {'msg': 'I numeri nelle immagini coincidono. Sto per procedere con la ricerca effettiva di una soluzione...'})
         socketio.sleep(0)
     else:
-        socketio.emit('status', {'msg': 'I numeri NON coincidono.'})
+        socketio.emit('status', {'msg': 'I numeri NON coincidono. Bloccando l\'esecuzione del codice...'})
         socketio.sleep(0)
         #TODO: Momo stacca tutto se i numeri non coincidono e riavvia il form
         return
@@ -79,6 +79,7 @@ def process_images(input_path, output_path):
     # Calcola il tempo impiegato
     solution_time = time.time() - start_time
     socketio.emit('status', {'msg': f'Soluzione trovata in {solution_time:.2f} secondi.'})
+    socketio.sleep(0)
     socketio.emit('status', {'msg': 'Generando la GIF con la soluzione...'})
     socketio.sleep(0)
     
