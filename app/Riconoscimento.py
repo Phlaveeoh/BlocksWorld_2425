@@ -124,7 +124,7 @@ def riconosci_immagine(percorsoImmagine, model):
 
         # Eseguo la previsione usando il modello
         prediction = model.predict(roi_normalized)
-        predicted_digit = np.argmax(prediction)
+        predicted_digit = np.argmax(prediction)+1  # Aggiungo 1 perchè le etichette del modello vanno da 0 a 5, ma noi vogliamo da 1 a 6
         #print("Cifra Predetta:",predicted_digit)
         
         # Salvo il numero che ho trovato e le sue coordinate
@@ -133,17 +133,17 @@ def riconosci_immagine(percorsoImmagine, model):
         yMio.append(y)
         
         # Disegno un rettangolo attorno alla cifra trovata e scrivo il numero predetto
-        #cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        #cv2.putText(immagine, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        cv2.rectangle(immagine, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.putText(immagine, str(predicted_digit), (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     # Mostro l'immagine dopo tutte le trasformazioni morfologiche e le predizioni fatte su di essa attraverso il modello
     # Le ridimensiono per renderle più leggibili
-    #image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
-    #image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
-    #cv2.imshow("Threshold", image_resized2)
-    #cv2.imshow("Risultato", image_resized)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
+    image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
+    cv2.imshow("Threshold", image_resized2)
+    cv2.imshow("Risultato", image_resized)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     # -------------------------
     # Operazioni finali per togliere doppioni e numeri non validi

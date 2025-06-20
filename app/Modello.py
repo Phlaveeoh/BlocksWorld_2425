@@ -6,14 +6,13 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import tensorflow as tf
 import visualkeras
-from keras.utils import plot_model
 import pandas  as pd
 import seaborn as sn
-
+import numpy as np
 
 mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
-class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] 
+#class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] 
 # Normalizzazione
 x_train = x_train.astype('float32') / 255.0
 x_test = x_test.astype('float32') / 255.0
@@ -21,6 +20,19 @@ x_test = x_test.astype('float32') / 255.0
 # Rimodellamento: (batch, altezza, larghezza, canali)
 x_train = x_train.reshape(-1, 28, 28, 1)
 x_test = x_test.reshape(-1, 28, 28, 1)
+
+# Filtro le etichette per mantenere solo i numeri da 1 a 6
+x_train_filtrato = x_train[np.isin(y_train, [1, 2, 3, 4, 5, 6])]
+y_train_filtrato = y_train[np.isin(y_train, [1, 2, 3, 4, 5, 6])]
+
+x_test_filtrato = x_test[np.isin(y_test, [1, 2, 3, 4, 5, 6])]
+y_test_filtrato = y_test[np.isin(y_test, [1, 2, 3, 4, 5, 6])]
+
+#Le etichette ora vanno da 1 a 6, le riadatto a partire da 0 per la classificazione
+y_train_filtrato -= 1
+y_test_filtrato -= 1
+
+class_names = ['1', '2', '3', '4', '5', '6'] 
 
 model = Sequential([
  # Primo livello convoluzionale
@@ -38,8 +50,8 @@ model = Sequential([
     Dropout(0.5),
     # Livello Dense con 128 neuroni
     Dense(128, activation='relu'),
-    # Livello di output: 10 neuroni con attivazione softmax per la classificazione
-    Dense(10, activation='softmax')
+    # Livello di output: 6 neuroni con attivazione softmax per la classificazione
+    Dense(6, activation='softmax')
 ])
 
 # Visualizza il sommario del modello
@@ -49,7 +61,7 @@ visualkeras.layered_view(model, legend_text_spacing_offset=0, to_file='output.pn
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 # Addestramento del modello: 10 epoche e batch size di 128 (questi parametri possono essere ottimizzati)
-history = model.fit(x_train, y_train, epochs=10, batch_size=32, validation_data=(x_test, y_test))
+history = model.fit(x_train_filtrato, y_train_filtrato, epochs=10, batch_size=32, validation_data=(x_test_filtrato, y_test_filtrato))
 
 # Degine a subplot grid 1x2
 plt.figure(figsize=(12, 6))
@@ -77,15 +89,15 @@ plt.tight_layout()
 plt.show()
 
 # Valutazione del modello sul test set
-score = model.evaluate(x_test, y_test, verbose=0)
+score = model.evaluate(x_test_filtrato, y_test_filtrato, verbose=0)
 print("Test Loss:", score[0])
 print("Test Accuracy:", score[1])
 
-y_pred = model.predict(x_test)
+y_pred = model.predict(x_test_filtrato)
 print("First image prediction prob:", y_pred[0])
 print("Predictions:", y_pred.argmax(axis=1))
 
-matrix = confusion_matrix(y_test, y_pred.argmax(axis=1))
+matrix = confusion_matrix(y_test_filtrato, y_pred.argmax(axis=1))
 print(matrix)
 
 df_cm = pd.DataFrame(matrix, class_names, class_names)
@@ -98,4 +110,4 @@ plt.title('Confusion Matrix')
 plt.show()
 
 # Salva il modello
-model.save("modello.keras") 
+model.save("modelloIntelligente.keras") 
