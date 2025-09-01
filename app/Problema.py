@@ -17,13 +17,14 @@ RESET = "\033[0m"
 def execute(name: str, algorithm: Callable, problem: Problem, *args) -> None:
     print(f"{BLUE}{name}{RESET}")
     start = time.time()
-    sol = algorithm(problem, *args)
+    sol, explored_nodes, frontier_nodes = algorithm(problem, *args)
     end = time.time()
     print(f"{GREEN}Problem:{RESET}\n{problem.initial}\n{GREEN}Goal:{RESET}\n{problem.goal}")
     print(f"{GREEN}Result:{RESET} {sol.solution() if sol is not None else '---'}")
     if isinstance(sol, Node):
-        print(f"{GREEN}Path Cost:{RESET} {sol.path_cost}")
         print(f"{GREEN}Path Length:{RESET} {sol.depth}")
+        print(f"{GREEN}Explored Nodes:{RESET} {explored_nodes}")
+        print(f"{GREEN}Frontier Nodes:{RESET} {frontier_nodes}")
     print(f"{GREEN}Time:{RESET} {end - start} s")
 
     return sol.solution()
@@ -41,7 +42,7 @@ def bfss(problem: Problem, f: Callable) -> Node:
         node = frontiera.pop()
         if problem.goal_test(node.state):
             print(f"Numero di nodi espansi:{len(esplorati)}")
-            return node
+            return node, len(esplorati), len(frontiera)
         esplorati.add(node.state)
         for child in node.expand(problem):
             if child.state not in esplorati and child not in frontiera:
@@ -53,14 +54,9 @@ def bfss(problem: Problem, f: Callable) -> Node:
                     frontiera.append(child)
     return None
 
-#Definizione A* g(n) + h(n) che utilizza la prima euristica
+#Definizione A* f(n) = g(n) + h(n)
 def aStar(problema: Problem, h : Callable | None = None) -> Node:
-    h = memoize(h or problema.h, 'h')
-    return bfss(problema, lambda node : h(node) + node.path_cost)
-
-#Definizione A* g(n) + h(n) che utilizza la seconda euristica
-def aStar2(problema: Problem, h : Callable | None = None) -> Node:
-    h = memoize(h or problema.h2, 'h')
+    h = memoize(h or problema.h_manhattan, 'h')
     return bfss(problema, lambda node : h(node) + node.path_cost)
 
 #Definizione UCS
@@ -115,27 +111,6 @@ class Board():
                     # dove la prima coppia di coordinate è la posizione attuale del blocco, la seconda coppia è la nuova posizione dove verrà spostato
                     positions.append((x, y, nx, ny))
         return positions
-    
-    #Altro metodo che restituisce alcuni spostamenti possibili per snellire l'albero di ricerca
-    def get_legal_positions2(self, x, y):
-        positions = []
-        empty_column_found = False
-        #Scorro tutta la board
-        for nx in range(len(self.matrix)):
-            for ny in range(len(self.matrix[nx])):
-                #Appena trovo una posizione legale dove il blocco può spostarsi la aggiungo alle posizioni
-                # FIXME: Condizione posizione legale
-                if(nx != x and self.matrix[nx][ny] == 0 and (ny == (len(self.matrix[nx])-1) or self.matrix[nx][ny+1] != 0)):
-                    if (ny == (len(self.matrix[nx])-1)):
-                        if (empty_column_found):
-                            continue
-                        else:
-                            empty_column_found = True
-                    #l'azione effettuabile è rappresentata da una tupla(x, y, nx, ny)
-                    # dove la prima coppia di coordinate è la posizione attuale del blocco, la seconda coppia è la nuova posizione dove verrà spostato
-                    positions.append((x, y, nx, ny))
-                    #print(f"{self.matrix[x][y]} da {x},{y} a {nx},{ny}")
-        return positions
 
 class BlocksWorldProblem(Problem):
     '''Il seguente problema consiste nello spostare i blocchi in uno spazio da una certa
@@ -153,7 +128,7 @@ class BlocksWorldProblem(Problem):
         actions = []
         #Scorro tutta la Board
         for x in range(len(state.matrix)):
-            for y in range(6):
+            for y in range(len(state.matrix[x])):
                 #Appena trovo un blocco che può essere spostato prendo la sua posizione e controllo con get_legal_positions dove può essere spostato
                 if state.matrix[x][y] != 0:
                     actions = actions + state.get_legal_positions(x, y)
@@ -182,38 +157,8 @@ class BlocksWorldProblem(Problem):
         #Le azioni non hanno costi particolari
         return c + 1
     
-    #Prima euristica, soluzioni subottimali ma veloce
-    def h(self, node):
-        state = node.state #Prendiamo lo stato dal nodo
-        euristica = 0 #Inizializziamo il valore euristico
-        valori = list(self.goal_positions.keys()) #prendo nomi dei blocchi
-        coordinateX = [] #In questi due array memorizzerò le coordinate di ogni blocco del goal
-        coordinateY = []
-        #Costruisco gli array
-        for valore, (x, y) in self.goal_positions.items():
-            coordinateX.append((x))
-            coordinateY.append((y))
-        #Scorro la matrice
-        for x in range(len(state.matrix)):
-            for y in range(len(state.matrix[x])):
-                block = state.matrix[x][y] #Prendo il blocco
-                if block != 0: #Controllo che sia diverso da 0
-                    for sus in valori: 
-                        if valori[sus-1] == block:
-                            #Controllo se il blocco è nella posizione desiderata
-                            if(x == coordinateX[sus-1] and y == coordinateY[sus-1]): 
-                                euristica -= y
-                            #Controllo se il blocco è nella colonna e nella riga di un altro blocco
-                            elif x in coordinateX and y in coordinateY:
-                            #elif (x,y) in zip(coordinateX, coordinateY):
-                                euristica += y + 1000
-                            #Se un blocco non è nella posizione giusta ma non blocca nessun blocco
-                            else: 
-                                euristica += (len(state.matrix[x])-1) -1 - y
-        return euristica
-    
     #Seconda euristica, distanza manhattan + penalità se i blocchi sono bloccati
-    def h2(self, node):
+    def h_manhattan(self, node):
         state = node.state  # Prendiamo lo stato dal nodo
         distance = 0
         for x in range(len(state.matrix)):
@@ -226,8 +171,50 @@ class BlocksWorldProblem(Problem):
                     penalty = sum(1 for yy in range(y+1, 6) if state.matrix[x][yy] != 0)
                     distance += base_distance + penalty  # Penalizza blocchi se devono essere liberati prima
         return distance
-
-""" # -------------------------
+    
+    def h_misplaced(self, node):
+        state = node.state
+        misplaced = 0
+        # Mappa delle posizioni attuali dei blocchi
+        current_positions = {state.matrix[x][y]: (x, y) for x in range(len(state.matrix)) for y in range(len(state.matrix[x])) if state.matrix[x][y] != 0}
+        # Calcolo del costo
+        for block, (cx, cy) in current_positions.items():
+            if block in self.goal_positions:
+                gx, gy = self.goal_positions[block]
+                
+                # Se il blocco non è nella sua posizione finale
+                if cx != gx or cy != gy:
+                    # Contribuisce al costo di base per la mossa
+                    misplaced += 1
+        return misplaced
+    
+    def h_blocked_blocks(self, node):
+        state = node.state
+        h_value = 0
+        
+        # Mappa delle posizioni attuali dei blocchi
+        current_positions = {state.matrix[x][y]: (x, y) for x in range(len(state.matrix)) for y in range(len(state.matrix[x])) if state.matrix[x][y] != 0}
+        
+        # Calcolo del costo
+        for block, (cx, cy) in current_positions.items():
+            if block in self.goal_positions:
+                gx, gy = self.goal_positions[block]
+                
+                # Se il blocco non è nella sua posizione finale
+                if cx != gx or cy != gy:
+                    # Contribuisce al costo di base per la mossa
+                    h_value += 1
+                    # Aggiungi il costo per i blocchi che lo bloccano nella sua posizione attuale
+                    blocks_above_current = len([b for b in state.matrix[cx][0:cy] if b != 0])
+                    h_value += blocks_above_current
+                    # Penalità per i blocchi che bloccano la posizione finale
+                    blocks_above_goal = len([b for b in state.matrix[gx][0:gy] if b != 0])
+                    h_value += blocks_above_goal + 1 # +1 per spostare il blocco bloccante
+                    
+        return h_value
+            
+    
+# -------------------------
 # Test di alcuni problemi
 # -------------------------
 
@@ -242,6 +229,7 @@ problema7 = BlocksWorldProblem(Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],
 problema8 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 problema9 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[5,4,3,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 problema10 = BlocksWorldProblem(Board([[0,0,0,1,2,3],[0,0,0,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,0,0],[0,0,0,5,4,3],[0,0,0,0,0,0],[0,0,0,2,1,6],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
+problema11 = BlocksWorldProblem(Board([[0,0,0,1,2,3],[0,0,0,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[0,0,0,0,2,3],[0,0,4,1,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
 
 execute("Problema 1", aStar, problema1)
 execute("Problema 2", aStar, problema2)
@@ -252,4 +240,5 @@ execute("Problema 6", aStar, problema6)
 execute("Problema 7", aStar, problema7)
 execute("Problema 8", aStar, problema8)
 execute("Problema 9", aStar, problema9)
-execute("Problema 10", aStar, problema10) """
+execute("Problema 10", aStar, problema10)
+execute("Problema 11", aStar, problema11)
