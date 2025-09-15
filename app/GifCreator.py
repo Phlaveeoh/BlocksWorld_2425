@@ -94,6 +94,7 @@ class GifCreator:
         self.draw_everything()
 
         for move in self.moves:
+            print(move)
             x, y, newX, newY = move
             block = get_block_from_matrix_coordinates(self.blocks, x, y)
             self.robotic_arm.grab(block)

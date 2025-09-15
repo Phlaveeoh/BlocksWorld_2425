@@ -140,10 +140,10 @@ def riconosci_immagine(percorsoImmagine, model):
     # Le ridimensiono per renderle più leggibili
     image_resized = cv2.resize(immagine, (800, 800), interpolation=cv2.INTER_LINEAR)
     image_resized2 = cv2.resize(closed, (800, 800), interpolation=cv2.INTER_LINEAR)
-    cv2.imshow("Threshold", image_resized2)
+    """ cv2.imshow("Threshold", image_resized2)
     cv2.imshow("Risultato", image_resized)
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.destroyAllWindows() """
 
     # -------------------------
     # Operazioni finali per togliere doppioni e numeri non validi

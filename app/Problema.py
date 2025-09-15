@@ -14,10 +14,10 @@ RESET = "\033[0m"
 # -------------------------
 
 #Metodo per risolvere un problema con un dato algoritmo
-def execute(name: str, algorithm: Callable, problem: Problem, *args) -> None:
+def execute(name: str, algorithm: Callable, problem: Problem, *args, heuristic: str = "blocked") -> tuple:
     print(f"{BLUE}{name}{RESET}")
     start = time.time()
-    sol, explored_nodes, frontier_nodes = algorithm(problem, *args)
+    sol, explored_nodes, frontier_nodes = algorithm(problem, *args, heuristic=heuristic)
     end = time.time()
     print(f"{GREEN}Problem:{RESET}\n{problem.initial}\n{GREEN}Goal:{RESET}\n{problem.goal}")
     print(f"{GREEN}Result:{RESET} {sol.solution() if sol is not None else '---'}")
@@ -27,23 +27,24 @@ def execute(name: str, algorithm: Callable, problem: Problem, *args) -> None:
         print(f"{GREEN}Frontier Nodes:{RESET} {frontier_nodes}")
     print(f"{GREEN}Time:{RESET} {end - start} s")
 
-    return sol.solution()
+    return sol.solution() if sol is not None else None, explored_nodes, frontier_nodes, end - start
 
 #Algoritmo di ricerca best_first_search
 def bfss(problem: Problem, f: Callable) -> Node:
     node: Node = Node(problem.initial)
+    esplorati = set()
     if problem.goal_test(node.state):
-        return node
+        return node, len(esplorati), 0
     f = memoize(f, 'f')
     frontiera = PriorityQueue('min', f)
     frontiera.append(node)
-    esplorati = set()
     while frontiera:
         node = frontiera.pop()
         if problem.goal_test(node.state):
             print(f"Numero di nodi espansi:{len(esplorati)}")
             return node, len(esplorati), len(frontiera)
         esplorati.add(node.state)
+        # print(f"Nodi espansi al momento: {len(esplorati)} | Nodi in frontiera: {len(frontiera)}")
         for child in node.expand(problem):
             if child.state not in esplorati and child not in frontiera:
                 frontiera.append(child)
@@ -55,9 +56,18 @@ def bfss(problem: Problem, f: Callable) -> Node:
     return None
 
 #Definizione A* f(n) = g(n) + h(n)
-def aStar(problema: Problem, h : Callable | None = None) -> Node:
-    h = memoize(h or problema.h_manhattan, 'h')
-    return bfss(problema, lambda node : h(node) + node.path_cost)
+def aStar(problema: Problem, heuristic: str = "blocked") -> Node:
+    # Seleziono l'euristica in base alla stringa
+    if heuristic == "misplaced":
+        h = memoize(problema.h_misplaced, 'h')
+    elif heuristic == "manhattan":
+        h = memoize(problema.h_manhattan, 'h')
+    elif heuristic == "blocked":
+        h = memoize(problema.h_blocked_blocks, 'h')
+    else:
+        raise ValueError(f"Euristica '{heuristic}' non riconosciuta")
+    
+    return bfss(problema, lambda node: h(node) + node.path_cost)
 
 #Definizione UCS
 def ucs(problem: Problem) -> Node:
@@ -217,7 +227,7 @@ class BlocksWorldProblem(Problem):
 # -------------------------
 # Test di alcuni problemi
 # -------------------------
-
+""" 
 tavola = Board([[0,0,0,1,4,5],[0,0,0,0,0,0],[0,0,0,0,0,6],[0,0,0,0,0,0],[0,0,0,0,3,2],[0,0,0,0,0,0]])
 problema1 = BlocksWorldProblem(tavola, Board([[0,0,0,5,1,4],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,2,6,3]]))
 problema2 = BlocksWorldProblem(Board([[1,2,3,4,5,6],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]), Board([[6,5,4,3,2,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]))
@@ -241,4 +251,4 @@ execute("Problema 7", aStar, problema7)
 execute("Problema 8", aStar, problema8)
 execute("Problema 9", aStar, problema9)
 execute("Problema 10", aStar, problema10)
-execute("Problema 11", aStar, problema11)
+execute("Problema 11", aStar, problema11) """
