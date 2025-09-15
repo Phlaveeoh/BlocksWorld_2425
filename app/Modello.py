@@ -34,7 +34,7 @@ y_test_filtrato -= 1
 
 class_names = ['1', '2', '3', '4', '5', '6'] 
 
-model = Sequential([
+'''model = Sequential([
  # Primo livello convoluzionale
     Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=(28, 28, 1)),
     # Secondo livello convoluzionale
@@ -52,6 +52,22 @@ model = Sequential([
     Dense(128, activation='relu'),
     # Livello di output: 6 neuroni con attivazione softmax per la classificazione
     Dense(6, activation='softmax')
+])'''
+
+model = Sequential([
+    Conv2D(32, (3,3), activation='relu', input_shape=(28,28,1)),
+    MaxPooling2D((2,2)),
+    
+    Conv2D(64, (3,3), activation='relu'),
+    MaxPooling2D((2,2)),
+    
+    Conv2D(128, (3,3), activation='relu'),
+    
+    Flatten(),
+    
+    Dense(128, activation='relu'),
+    Dropout(0.5),
+    Dense(6, activation='softmax')  # 6 cifre (1–6)
 ])
 
 # Visualizza il sommario del modello
@@ -110,4 +126,4 @@ plt.title('Confusion Matrix')
 plt.show()
 
 # Salva il modello
-model.save("modelloIntelligente.keras") 
+model.save("modelloIntelligente2.keras") 

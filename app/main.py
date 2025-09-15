@@ -21,7 +21,7 @@ app.config['SERVER_NAME'] = 'localhost:5000'
 app.config['PREFERRED_URL_SCHEME'] = 'http'
 
 socketio = SocketIO(app, cors_allowed_origins="*")
-modello = load_model(os.path.join('models', 'modelloIntelligente.keras'))
+modello = load_model(os.path.join('models', 'modelloIntelligente2.keras'))
  
 @app.route("/", methods=["GET", "POST"])
 def index():
